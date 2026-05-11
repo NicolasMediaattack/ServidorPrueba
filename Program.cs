@@ -1,4 +1,21 @@
-﻿var builder = WebApplication.CreateBuilder(args);
+﻿using System.Diagnostics;
+
+var process = new Process();
+
+process.StartInfo.FileName = "ffmpeg";
+process.StartInfo.Arguments = "-version";
+
+process.StartInfo.RedirectStandardOutput = true;
+
+process.Start();
+
+string output = process.StandardOutput.ReadToEnd();
+
+process.WaitForExit();
+
+Console.WriteLine(output);
+
+var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.Limits.MaxRequestBodySize = 500_000_000; // 500 MB
