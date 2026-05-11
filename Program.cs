@@ -50,69 +50,37 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
 {
     var form = await request.ReadFormAsync();
 
-    string texto =
-        form["texto"].ToString();
+    string texto = form["texto"].ToString();
 
-    float minDuration =
-        float.Parse(form["minDuration"]);
+    // ✅ Leer las duraciones
+    float minDuration = float.Parse(form["minDuration"].ToString());
+    float maxDuration = float.Parse(form["maxDuration"].ToString());
 
-    float maxDuration =
-        float.Parse(form["maxDuration"]);
+    Console.WriteLine($"⏱️ Min duración: {minDuration}s | Max duración: {maxDuration}s");
 
-    Console.WriteLine(
-        $"⏱️ Min: {minDuration} | Max: {maxDuration}");
+    // ✅ Recibir el video
+    IFormFile? video = form.Files["video"];
 
-    IFormFile? video =
-        form.Files["video"];
-
-    if (video == null)
+    if (video != null)
     {
-        return Results.BadRequest(
-            "No se recibió video");
-    }
+        string rutaGuardado = Path.Combine("/tmp", video.FileName);
 
-    // =========================
-    // GUARDAR VIDEO
-    // =========================
-
-    string rutaGuardado =
-        Path.Combine(
-            "/tmp",
-            video.FileName);
-
-    using (var stream =
-        File.Create(rutaGuardado))
-    {
+        using var stream = File.Create(rutaGuardado);
         await video.CopyToAsync(stream);
+
+        Console.WriteLine($"🎬 Video recibido: {video.FileName} ({video.Length / 1_000_000} MB)");
+        Console.WriteLine($"   Guardado en: {rutaGuardado}");
+
+        // =========================
+        // CREAR OBJETO FFMPEGMODEL
+        // =========================
+
+        FfmpegModel ffmpeg = new FfmpegModel(rutaGuardado, minDuration, maxDuration);
     }
 
-    Console.WriteLine(
-        $"🎬 Video guardado: {rutaGuardado}");
+    Console.WriteLine($"→ Texto: {texto}");
 
-    // =========================
-    // RECORTAR VIDEO
-    // =========================
-
-    FfmpegModel ffmpeg =
-        new FfmpegModel(
-            rutaGuardado,
-            minDuration,
-            maxDuration);
-
-    string trimmedVideo =
-        await ffmpeg.TrimVideo();
-
-    Console.WriteLine(
-        $"✅ Video recortado: {trimmedVideo}");
-
-    // =========================
-    // DEVOLVER MP4
-    // =========================
-
-    return Results.File(
-        trimmedVideo,
-        "video/mp4",
-        "trimmed.mp4");
+    return Results.Ok(new { respuesta = "Recibido correctamente", ok = true });
 });
 
 Console.ForegroundColor = ConsoleColor.Cyan;
