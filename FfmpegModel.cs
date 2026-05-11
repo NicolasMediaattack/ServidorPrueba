@@ -1,11 +1,15 @@
 using Xabe.FFmpeg;
+
 public class FfmpegModel
 {
     public string video;
     public float minDuration;
     public float maxDuration;
 
-    public FfmpegModel(string video, float minDuration, float maxDuration)
+    public FfmpegModel(
+        string video,
+        float minDuration,
+        float maxDuration)
     {
         this.video = video;
         this.minDuration = minDuration;
@@ -22,48 +26,37 @@ public class FfmpegModel
         float duration =
             maxDuration - minDuration;
 
-        try
+        if (duration <= 0)
         {
-            var conversion =
-                await FFmpeg.Conversions
-                    .FromSnippet
-                    .Split(
-                        video,
-                        output,
-                        TimeSpan.FromSeconds(minDuration),
-                        TimeSpan.FromSeconds(duration));
-
-            await conversion.Start();
-
-            Console.WriteLine(
-                "✅ FFmpeg terminó correctamente");
+            throw new Exception(
+                "La duración debe ser mayor que 0");
         }
-        catch (Exception ex)
+
+        var conversion =
+            await FFmpeg.Conversions
+                .FromSnippet
+                .Split(
+                    video,
+                    output,
+                    TimeSpan.FromSeconds(minDuration),
+                    TimeSpan.FromSeconds(duration));
+
+        await conversion.Start();
+
+        // MUY IMPORTANTE
+
+        if (!File.Exists(output))
         {
-            Console.WriteLine(
-                "⚠️ Xabe lanzó excepción");
-
-            Console.WriteLine(ex.Message);
-
-            // MUY IMPORTANTE:
-            // verificar si el archivo sí existe
-
-            if (File.Exists(output))
-            {
-                Console.WriteLine(
-                    "✅ Pero el video SÍ fue generado");
-
-                return output;
-            }
-
-            throw;
+            throw new Exception(
+                "FFmpeg no generó el archivo");
         }
+
+        FileInfo fileInfo =
+            new FileInfo(output);
+
+        Console.WriteLine(
+            $"✅ Archivo generado: {fileInfo.Length} bytes");
 
         return output;
-    }
-
-    void concatVideos()
-    {
-        // Aquí iría la lógica para concatenar videos usando FFmpeg
     }
 }
