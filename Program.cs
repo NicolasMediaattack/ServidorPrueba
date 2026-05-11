@@ -50,29 +50,59 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
 {
     var form = await request.ReadFormAsync();
 
-    string texto = form["texto"].ToString();
+    // =========================
+    // TIEMPOS
+    // =========================
+
+    float minTime =
+        float.Parse(form["minTime"]);
+
+    float maxTime =
+        float.Parse(form["maxTime"]);
+
+    // =========================
+    // VIDEO
+    // =========================
+
+    var videoFile = form.Files["video"];
+
+    if (videoFile == null)
+    {
+        return Results.BadRequest("No se recibió video");
+    }
+
+    // Guardar temporalmente
+
+    string tempPath =
+        Path.Combine(
+            Path.GetTempPath(),
+            videoFile.FileName);
+
+    using (var stream =
+        File.Create(tempPath))
+    {
+        await videoFile.CopyToAsync(stream);
+    }
+
+    // =========================
+    // LOGS
+    // =========================
 
     Console.ForegroundColor = ConsoleColor.Green;
 
-    Console.WriteLine("\n✅ Mensaje recibido:");
+    Console.WriteLine("\n✅ Video recibido");
 
     Console.ResetColor();
 
-    Console.WriteLine($"→ {texto}");
+    Console.WriteLine($"Archivo: {videoFile.FileName}");
+    Console.WriteLine($"MinTime: {minTime}");
+    Console.WriteLine($"MaxTime: {maxTime}");
+
+    Console.WriteLine($"Guardado en: {tempPath}");
 
     return Results.Ok(new
     {
-        respuesta = "Mensaje recibido correctamente",
-        ok = true
+        ok = true,
+        mensaje = "Video recibido correctamente"
     });
 });
-
-Console.ForegroundColor = ConsoleColor.Cyan;
-
-Console.WriteLine("=================================");
-Console.WriteLine("      SERVIDOR INICIADO          ");
-Console.WriteLine("=================================");
-
-Console.ResetColor();
-
-app.Run();
