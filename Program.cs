@@ -53,8 +53,8 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
     string texto = form["texto"].ToString();
 
     // ✅ Leer las duraciones
-    float minDuration = float.Parse(form["minDuration"].ToString());
-    float maxDuration = float.Parse(form["maxDuration"].ToString());
+    float minDuration = float.Parse(form["minDuration"].ToString(), System.Globalization.CultureInfo.InvariantCulture);
+    float maxDuration = float.Parse(form["maxDuration"].ToString(), System.Globalization.CultureInfo.InvariantCulture);
 
     Console.WriteLine($"⏱️ Min duración: {minDuration}s | Max duración: {maxDuration}s");
 
