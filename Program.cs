@@ -1,49 +1,78 @@
 ﻿using System.Diagnostics;
 
-var process = new Process();
+try
+{
+    var process = new Process();
 
-process.StartInfo.FileName = "ffmpeg";
-process.StartInfo.Arguments = "-version";
+    process.StartInfo.FileName = "ffmpeg";
+    process.StartInfo.Arguments = "-version";
 
-process.StartInfo.RedirectStandardOutput = true;
+    process.StartInfo.RedirectStandardOutput = true;
+    process.StartInfo.RedirectStandardError = true;
 
-process.Start();
+    process.StartInfo.UseShellExecute = false;
 
-string output = process.StandardOutput.ReadToEnd();
+    process.Start();
 
-process.WaitForExit();
+    string output = process.StandardOutput.ReadToEnd();
 
-Console.WriteLine(output);
+    process.WaitForExit();
+
+    Console.ForegroundColor = ConsoleColor.Green;
+
+    Console.WriteLine("✅ FFmpeg encontrado");
+
+    Console.ResetColor();
+
+    Console.WriteLine(output);
+}
+catch (Exception ex)
+{
+    Console.ForegroundColor = ConsoleColor.Red;
+
+    Console.WriteLine("❌ FFmpeg no encontrado");
+
+    Console.WriteLine(ex.Message);
+
+    Console.ResetColor();
+}
 
 var builder = WebApplication.CreateBuilder(args);
+
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.Limits.MaxRequestBodySize = 500_000_000; // 500 MB
+    options.Limits.MaxRequestBodySize = 500_000_000;
 });
+
 var app = builder.Build();
 
 app.MapPost("/mensaje", async (HttpRequest request) =>
 {
-    // Leer el formulario multipart
     var form = await request.ReadFormAsync();
 
     string texto = form["texto"].ToString();
 
     Console.ForegroundColor = ConsoleColor.Green;
-    Console.WriteLine("\n✅ Mensaje recibido del cliente:");
+
+    Console.WriteLine("\n✅ Mensaje recibido:");
+
     Console.ResetColor();
-    Console.WriteLine($"   → Texto: {texto}");
 
-    Console.WriteLine($"   (Recibido a las {DateTime.Now:HH:mm:ss})");
+    Console.WriteLine($"→ {texto}");
 
-    return Results.Ok(new { respuesta = "Mensaje recibido correctamente", ok = true });
+    return Results.Ok(new
+    {
+        respuesta = "Mensaje recibido correctamente",
+        ok = true
+    });
 });
 
 Console.ForegroundColor = ConsoleColor.Cyan;
+
 Console.WriteLine("=================================");
-Console.WriteLine("   SERVIDOR ESCUCHANDO en :5000  ");
+Console.WriteLine("      SERVIDOR INICIADO          ");
 Console.WriteLine("=================================");
+
 Console.ResetColor();
-Console.WriteLine("Esperando mensajes...\n");
 
 app.Run();
