@@ -52,19 +52,23 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
 
     string texto = form["texto"].ToString();
 
-    Console.ForegroundColor = ConsoleColor.Green;
+    // ✅ Recibir el video
+    IFormFile? video = form.Files["video"];
 
-    Console.WriteLine("\n✅ Mensaje recibido:");
-
-    Console.ResetColor();
-
-    Console.WriteLine($"→ {texto}");
-
-    return Results.Ok(new
+    if (video != null)
     {
-        respuesta = "Mensaje recibido correctamente",
-        ok = true
-    });
+        string rutaGuardado = Path.Combine("/tmp", video.FileName);
+
+        using var stream = File.Create(rutaGuardado);
+        await video.CopyToAsync(stream);
+
+        Console.WriteLine($"🎬 Video recibido: {video.FileName} ({video.Length / 1_000_000} MB)");
+        Console.WriteLine($"   Guardado en: {rutaGuardado}");
+    }
+
+    Console.WriteLine($"→ Texto: {texto}");
+
+    return Results.Ok(new { respuesta = "Recibido correctamente", ok = true });
 });
 
 Console.ForegroundColor = ConsoleColor.Cyan;
