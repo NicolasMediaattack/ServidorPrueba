@@ -14,31 +14,50 @@ public class FfmpegModel
 
     public async Task<string> TrimVideo()
     {
-        // Nombre output
-
         string output =
             Path.Combine(
                 "/tmp",
                 $"cut_{Guid.NewGuid()}.mp4");
 
-        // Duración real
-
         float duration =
             maxDuration - minDuration;
 
-        // Crear conversión
+        try
+        {
+            var conversion =
+                await FFmpeg.Conversions
+                    .FromSnippet
+                    .Split(
+                        video,
+                        output,
+                        TimeSpan.FromSeconds(minDuration),
+                        TimeSpan.FromSeconds(duration));
 
-        var conversion = await FFmpeg.Conversions.FromSnippet.Split(
-            video,
-            output,
-            TimeSpan.FromSeconds(minDuration),
-            TimeSpan.FromSeconds(duration));
+            await conversion.Start();
 
-        // Ejecutar
+            Console.WriteLine(
+                "✅ FFmpeg terminó correctamente");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(
+                "⚠️ Xabe lanzó excepción");
 
-        await conversion.Start();
+            Console.WriteLine(ex.Message);
 
-        Console.WriteLine("✅ Video recortado");
+            // MUY IMPORTANTE:
+            // verificar si el archivo sí existe
+
+            if (File.Exists(output))
+            {
+                Console.WriteLine(
+                    "✅ Pero el video SÍ fue generado");
+
+                return output;
+            }
+
+            throw;
+        }
 
         return output;
     }
