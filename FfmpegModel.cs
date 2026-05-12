@@ -1,11 +1,15 @@
-using Xabe.FFmpeg;
+using System.Diagnostics;
+
 public class FfmpegModel
 {
     private readonly string videoPath;
     private readonly float minDuration;
     private readonly float maxDuration;
 
-    public FfmpegModel(string videoPath, float minDuration, float maxDuration)
+    public FfmpegModel(
+        string videoPath,
+        float minDuration,
+        float maxDuration)
     {
         this.videoPath = videoPath;
         this.minDuration = minDuration;
@@ -15,65 +19,109 @@ public class FfmpegModel
     public async Task<string> TrimVideo()
     {
         // =========================
-        // CONFIGURAR FFMPEG
+        // DURACIÓN VIDEO
         // =========================
 
-        FFmpeg.SetExecutablesPath("/usr/bin");
+        double totalSeconds =
+            await GetVideoDuration();
 
-        // =========================
-        // LEER INFO VIDEO
-        // =========================
+        double outputDuration =
+            totalSeconds
+            - minDuration
+            - maxDuration;
 
-        IMediaInfo mediaInfo = await FFmpeg.GetMediaInfo(videoPath);
-
-        TimeSpan totalDuration = mediaInfo.Duration;
-
-        Console.WriteLine($"🎞️ Duración total: {totalDuration}");
-
-        // =========================
-        // CALCULAR RECORTE
-        // =========================
-
-        TimeSpan startTime = TimeSpan.FromSeconds(minDuration);
-        TimeSpan finalDuration = totalDuration - TimeSpan.FromSeconds(minDuration) - TimeSpan.FromSeconds(maxDuration);
-
-        if (finalDuration.TotalSeconds <= 0)
+        if (outputDuration <= 0)
         {
-            throw new Exception("⛔ Duración final no válida. Verifica los valores de minDuration y maxDuration.");
+            throw new Exception(
+                "Duración inválida");
         }
 
         // =========================
         // OUTPUT
         // =========================
 
-        string outputPath = Path.Combine("/tmp", $"trimmed_{Guid.NewGuid()}.mp4");
+        string outputPath =
+            Path.Combine(
+                "/tmp",
+                $"trimmed_{Guid.NewGuid()}.mp4");
 
         // =========================
-        // RECORTAR
+        // ARGUMENTOS
         // =========================
 
-        /*IConversion conversion = FFmpeg.Conversions.New();
+        string arguments =
+            $"-ss {minDuration} " +
+            $"-i \"{videoPath}\" " +
+            $"-t {outputDuration} " +
+            $"-c copy " +
+            $"\"{outputPath}\" -y";
 
-        conversion.AddParameter($"-ss {startTime}", ParameterPosition.PreInput);
-        conversion.AddParameter($"-t {finalDuration}");
-        conversion.AddParameter($"-i \"{videoPath}\"");
-        conversion.SetOutput(outputPath);
+        // =========================
+        // PROCESO
+        // =========================
 
-        Console.WriteLine($"✂️ Recortando video...");
+        Process process =
+            new Process();
 
-        await conversion.Start();*/
+        process.StartInfo.FileName =
+            "ffmpeg";
 
-        IConversion conversion =
-        await FFmpeg.Conversions.FromSnippet.Split(
-            videoPath,
-            outputPath,
-            startTime,
-            finalDuration);
+        process.StartInfo.Arguments =
+            arguments;
 
-        await conversion.Start();
+        process.StartInfo.RedirectStandardError =
+            true;
 
-        Console.WriteLine($"✅ Video recortado guardado en: {outputPath}");
+        process.StartInfo.UseShellExecute =
+            false;
+
+        process.Start();
+
+        string output =
+            await process.StandardError
+                .ReadToEndAsync();
+
+        await process.WaitForExitAsync();
+
+        Console.WriteLine(output);
+
+        if (process.ExitCode != 0)
+        {
+            throw new Exception(output);
+        }
 
         return outputPath;
+    }
+
+    private async Task<double> GetVideoDuration()
+    {
+        Process process =
+            new Process();
+
+        process.StartInfo.FileName =
+            "ffprobe";
+
+        process.StartInfo.Arguments =
+            $"-v error -show_entries format=duration " +
+            $"-of default=noprint_wrappers=1:nokey=1 " +
+            $"\"{videoPath}\"";
+
+        process.StartInfo.RedirectStandardOutput =
+            true;
+
+        process.StartInfo.UseShellExecute =
+            false;
+
+        process.Start();
+
+        string output =
+            await process.StandardOutput
+                .ReadToEndAsync();
+
+        await process.WaitForExitAsync();
+
+        return double.Parse(
+            output,
+            System.Globalization.CultureInfo.InvariantCulture);
     }
 }
