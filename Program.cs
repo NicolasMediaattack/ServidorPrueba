@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Globalization;
 
 try
 {
@@ -52,35 +53,89 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
 
     string texto = form["texto"].ToString();
 
-    // ✅ Leer las duraciones
-    float minDuration = float.Parse(form["minDuration"].ToString());
-    float maxDuration = float.Parse(form["maxDuration"].ToString());
+    float minDuration =
+    float.Parse(
+        form["minDuration"],
+        CultureInfo.InvariantCulture);
 
-    Console.WriteLine($"⏱️ Min duración: {minDuration}s | Max duración: {maxDuration}s");
+    float maxDuration =
+        float.Parse(
+            form["maxDuration"],
+            CultureInfo.InvariantCulture);
 
-    // ✅ Recibir el video
-    IFormFile? video = form.Files["video"];
+    IFormFile? video =
+        form.Files["video"];
 
-    if (video != null)
+    if (video == null)
     {
-        string rutaGuardado = Path.Combine("/tmp", video.FileName);
-
-        using var stream = File.Create(rutaGuardado);
-        await video.CopyToAsync(stream);
-
-        Console.WriteLine($"🎬 Video recibido: {video.FileName} ({video.Length / 1_000_000} MB)");
-        Console.WriteLine($"   Guardado en: {rutaGuardado}");
-
-        // =========================
-        // CREAR OBJETO FFMPEGMODEL
-        // =========================
-
-        FfmpegModel ffmpeg = new FfmpegModel(rutaGuardado, minDuration, maxDuration);
+        return Results.BadRequest(
+            "No se envió video");
     }
 
-    Console.WriteLine($"→ Texto: {texto}");
+    if (video.Length == 0)
+    {
+        return Results.BadRequest(
+            "Video vacío");
+    }
 
-    return Results.Ok(new { respuesta = "Recibido correctamente", ok = true });
+    // =========================
+    // GUARDAR VIDEO
+    // =========================
+
+    string inputPath =
+        Path.Combine(
+            "/tmp",
+            $"{Guid.NewGuid()}_{video.FileName}");
+
+    using (var stream = File.Create(inputPath))
+    {
+        await video.CopyToAsync(stream);
+    }
+
+    Console.WriteLine(
+        $"🎬 Video guardado: {inputPath}");
+
+    // =========================
+    // RECORTAR
+    // =========================
+
+    if (minDuration < 0 || maxDuration < 0)
+    {
+        return Results.BadRequest(
+            "Duraciones inválidas");
+    }
+
+    FfmpegModel ffmpeg =
+        new FfmpegModel(
+            inputPath,
+            minDuration,
+            maxDuration);
+
+    string trimmedPath =
+        await ffmpeg.TrimVideo();
+
+    // =========================
+    // LEER RESULTADO
+    // =========================
+
+    byte[] videoBytes =
+        await File.ReadAllBytesAsync(trimmedPath);
+
+    // =========================
+    // LIMPIAR TEMPORALES
+    // =========================
+
+    File.Delete(inputPath);
+    File.Delete(trimmedPath);
+
+    // =========================
+    // DEVOLVER VIDEO
+    // =========================
+
+    return Results.File(
+        videoBytes,
+        "video/mp4",
+        "trimmed.mp4");
 });
 
 Console.ForegroundColor = ConsoleColor.Cyan;
