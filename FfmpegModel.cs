@@ -93,6 +93,78 @@ public class FfmpegModel
         return outputPath;
     }
 
+    public async Task<string> ConcatVideos(string firstVideo, string secondVideo)
+    {
+        
+        // =========================
+        // ARCHIVO LISTA
+        // =========================
+
+        string listPath =
+            Path.Combine(
+                "/tmp",
+                $"list_{Guid.NewGuid()}.txt");
+
+        await File.WriteAllTextAsync(
+            listPath,
+            $"file '{firstVideo}'\n" +
+            $"file '{secondVideo}'");
+
+        // =========================
+        // OUTPUT
+        // =========================
+
+        string outputPath =
+            Path.Combine(
+                "/tmp",
+                $"concat_{Guid.NewGuid()}.mp4");
+
+        // =========================
+        // FFMPEG
+        // =========================
+
+        string arguments =
+            $"-f concat " +
+            $"-safe 0 " +
+            $"-i \"{listPath}\" " +
+            $"-c copy " +
+            $"\"{outputPath}\" -y";
+
+        Process process =
+            new Process();
+
+        process.StartInfo.FileName =
+            "ffmpeg";
+
+        process.StartInfo.Arguments =
+            arguments;
+
+        process.StartInfo.RedirectStandardError =
+            true;
+
+        process.StartInfo.UseShellExecute =
+            false;
+
+        process.Start();
+
+        string output =
+            await process.StandardError
+                .ReadToEndAsync();  
+
+        await process.WaitForExitAsync();
+
+        Console.WriteLine(output);
+
+        File.Delete(listPath);
+
+        if (process.ExitCode != 0)
+        {
+            throw new Exception(output);
+        }
+
+        return outputPath;
+    }
+
     private async Task<double> GetVideoDuration()
     {
         Process process =

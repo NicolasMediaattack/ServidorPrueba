@@ -47,7 +47,7 @@ builder.WebHost.ConfigureKestrel(options =>
 
 var app = builder.Build();
 
-app.MapPost("/mensaje", async (HttpRequest request) =>
+/*app.MapPost("/mensaje", async (HttpRequest request) =>
 {
     var form = await request.ReadFormAsync();
 
@@ -136,6 +136,130 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         videoBytes,
         "video/mp4",
         "trimmed.mp4");
+});*/
+
+app.MapPost("/mensaje", async (HttpContext context) =>
+{
+    var form =
+        await context.Request.ReadFormAsync();
+
+    float minDuration =
+        float.Parse(form["minDuration"]);
+
+    float maxDuration =
+        float.Parse(form["maxDuration"]);
+
+    IFormFile? video =
+        form.Files["video"];
+
+    if (video == null)
+    {
+        return Results.BadRequest(
+            "No video");
+    }
+
+    // =========================
+    // GUARDAR VIDEO ORIGINAL
+    // =========================
+
+    string inputPath =
+        Path.Combine(
+            "/tmp",
+            $"{Guid.NewGuid()}_{video.FileName}");
+
+    await using (var stream =
+        File.Create(inputPath))
+    {
+        await video.CopyToAsync(stream);
+    }
+
+    Console.WriteLine(
+        $"🎬 Video guardado: {inputPath}");
+
+    // =========================
+    // TRIM
+    // =========================
+
+    FfmpegModel ffmpeg =
+        new FfmpegModel(
+            inputPath,
+            minDuration,
+            maxDuration);
+
+    string trimmedPath =
+        await ffmpeg.TrimVideo();
+
+    // =========================
+    // VIDEO FINAL ACUMULADO
+    // =========================
+
+    string finalVideoPath =
+        "/tmp/final.mp4";
+
+    // =========================
+    // SI ES EL PRIMER VIDEO
+    // =========================
+
+    if (!File.Exists(finalVideoPath))
+    {
+        File.Copy(
+            trimmedPath,
+            finalVideoPath,
+            true);
+    }
+    else
+    {
+        // =========================
+        // CONCATENAR
+        // =========================
+
+        string concatenated =
+            await ffmpeg.ConcatVideos(
+                finalVideoPath,
+                trimmedPath);
+
+        // borrar viejo final
+        File.Delete(finalVideoPath);
+
+        // reemplazar
+        File.Move(
+            concatenated,
+            finalVideoPath);
+    }
+
+    // =========================
+    // AUTO CLEANUP
+    // =========================
+
+    context.Response.OnCompleted(() =>
+    {
+        try
+        {
+            if (File.Exists(inputPath))
+                File.Delete(inputPath);
+
+            if (File.Exists(trimmedPath))
+                File.Delete(trimmedPath);
+
+            Console.WriteLine(
+                "🧹 Temporales eliminados");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex);
+        }
+
+        return Task.CompletedTask;
+    });
+
+    // =========================
+    // DEVOLVER VIDEO ACUMULADO
+    // =========================
+
+    return Results.File(
+        finalVideoPath,
+        "video/mp4",
+        "final.mp4");
 });
 
 Console.ForegroundColor = ConsoleColor.Cyan;
