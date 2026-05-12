@@ -90,8 +90,6 @@ public class FfmpegModel
             throw new Exception(output);
         }
 
-        ShowTrimmedVideos();
-
         return outputPath;
     }
 
@@ -125,17 +123,5 @@ public class FfmpegModel
         return double.Parse(
             output,
             System.Globalization.CultureInfo.InvariantCulture);
-    }
-
-    public void ShowTrimmedVideos ()
-    {
-        string[] trimmedVideos = Directory.GetFiles("/tmp", "trimmed_*.mp4");
-    
-            Console.WriteLine("Videos recortados:");
-    
-            foreach (string video in trimmedVideos)
-            {
-                Console.WriteLine(video);
-            }
     }
 }
