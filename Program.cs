@@ -1,6 +1,9 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
 
+SemaphoreSlim semaphore =
+    new SemaphoreSlim(1, 1);
+
 try
 {
     var process = new Process();
@@ -49,95 +52,135 @@ var app = builder.Build();
 
 app.MapPost("/mensaje", async (HttpRequest request) =>
 {
-    var form = await request.ReadFormAsync();
+    await semaphore.WaitAsync();
 
-    string texto = form["texto"].ToString();
-
-    float minDuration =
-    float.Parse(
-        form["minDuration"],
-        CultureInfo.InvariantCulture);
-
-    float maxDuration =
-        float.Parse(
-            form["maxDuration"],
-            CultureInfo.InvariantCulture);
-
-    IFormFile? video =
-        form.Files["video"];
-
-    if (video == null)
+    try
     {
-        return Results.BadRequest(
-            "No se envió video");
-    }
+        var form =
+            await request.ReadFormAsync();
 
-    if (video.Length == 0)
+        float minDuration =
+            float.Parse(
+                form["minDuration"],
+                CultureInfo.InvariantCulture);
+
+        float maxDuration =
+            float.Parse(
+                form["maxDuration"],
+                CultureInfo.InvariantCulture);
+
+        IFormFile? video =
+            form.Files["video"];
+
+        if (video == null)
+        {
+            return Results.BadRequest(
+                "No video");
+        }
+
+        // =========================
+        // INPUT
+        // =========================
+
+        string inputPath =
+            Path.Combine(
+                "/tmp",
+                $"{Guid.NewGuid()}_{video.FileName}");
+
+        using (var stream =
+            File.Create(inputPath))
+        {
+            await video.CopyToAsync(stream);
+        }
+
+        Console.WriteLine(
+            $"🎬 Input: {inputPath}");
+
+        // =========================
+        // TRIM
+        // =========================
+
+        FfmpegModel ffmpeg =
+            new FfmpegModel(
+                inputPath,
+                minDuration,
+                maxDuration);
+
+        string trimmedPath =
+            await ffmpeg.TrimVideo();
+
+        Console.WriteLine(
+            $"✂️ Trimmed: {trimmedPath}");
+
+        // =========================
+        // NORMALIZE
+        // =========================
+
+        string normalizedPath =
+            await ffmpeg.NormalizeVideo(
+                trimmedPath);
+
+        Console.WriteLine(
+            $"📏 Normalized: {normalizedPath}");
+
+        // =========================
+        // FINAL VIDEO
+        // =========================
+
+        string finalVideoPath =
+            "/tmp/final.mp4";
+
+        // =========================
+        // PRIMER VIDEO
+        // =========================
+
+        if (!File.Exists(finalVideoPath))
+        {
+            File.Copy(
+                normalizedPath,
+                finalVideoPath,
+                true);
+        }
+        else
+        {
+            string concatPath =
+                await ffmpeg.ConcatVideos(
+                    finalVideoPath,
+                    normalizedPath);
+
+            File.Delete(finalVideoPath);
+
+            File.Move(
+                concatPath,
+                finalVideoPath);
+        }
+
+        Console.WriteLine(
+            "✅ Video concatenado");
+
+        // =========================
+        // DEBUG
+        // =========================
+
+        FfmpegModel.ShowTemporaryVideos();
+
+        // =========================
+        // RESPUESTA
+        // =========================
+
+        byte[] bytes =
+            await File.ReadAllBytesAsync(
+                finalVideoPath);
+
+        return Results.File(
+            bytes,
+            "video/mp4",
+            "final.mp4");
+    }
+    finally
     {
-        return Results.BadRequest(
-            "Video vacío");
+        semaphore.Release();
     }
-
-    // =========================
-    // GUARDAR VIDEO
-    // =========================
-
-    string inputPath =
-        Path.Combine(
-            "/tmp",
-            $"{Guid.NewGuid()}_{video.FileName}");
-
-    using (var stream = File.Create(inputPath))
-    {
-        await video.CopyToAsync(stream);
-    }
-
-    Console.WriteLine(
-        $"🎬 Video guardado: {inputPath}");
-
-    // =========================
-    // RECORTAR
-    // =========================
-
-    if (minDuration < 0 || maxDuration < 0)
-    {
-        return Results.BadRequest(
-            "Duraciones inválidas");
-    }
-
-    FfmpegModel ffmpeg =
-        new FfmpegModel(
-            inputPath,
-            minDuration,
-            maxDuration);
-
-    string trimmedPath =
-        await ffmpeg.TrimVideo();
-
-    FfmpegModel.ShowTemporaryVideos();
-
-    // =========================
-    // LEER RESULTADO
-    // =========================
-
-    byte[] videoBytes =
-        await File.ReadAllBytesAsync(trimmedPath);
-
-    // =========================
-    // LIMPIAR TEMPORALES
-    // =========================
-
-    //File.Delete(inputPath);
-    //File.Delete(trimmedPath);
-
-    // =========================
-    // DEVOLVER VIDEO
-    // =========================
-
-    return Results.File(
-        videoBytes,
-        "video/mp4",
-        "trimmed.mp4");
 });
 
 Console.ForegroundColor = ConsoleColor.Cyan;

@@ -126,52 +126,138 @@ public class FfmpegModel
     }
 
     public static void ShowTemporaryVideos()
-{
-    Console.ForegroundColor =
-        ConsoleColor.Cyan;
-
-    Console.WriteLine(
-        "\n==============================");
-
-    Console.WriteLine(
-        "📂 VIDEOS TEMPORALES EN /tmp");
-
-    Console.WriteLine(
-        "==============================");
-
-    Console.ResetColor();
-
-    string[] files =
-        Directory.GetFiles(
-            "/tmp",
-            "*.mp4");
-
-    if (files.Length == 0)
     {
-        Console.WriteLine(
-            "No hay videos temporales");
+        Console.ForegroundColor =
+            ConsoleColor.Cyan;
 
-        return;
+        Console.WriteLine(
+            "\n==============================");
+
+        Console.WriteLine(
+            "📂 VIDEOS TEMPORALES EN /tmp");
+
+        Console.WriteLine(
+            "==============================");
+
+        Console.ResetColor();
+
+        string[] files =
+            Directory.GetFiles(
+                "/tmp",
+                "*.mp4");
+
+        if (files.Length == 0)
+        {
+            Console.WriteLine(
+                "No hay videos temporales");
+
+            return;
+        }
+
+        foreach (string file in files)
+        {
+            FileInfo info =
+                new FileInfo(file);
+
+            Console.WriteLine(
+                $"🎬 {info.Name}");
+
+            Console.WriteLine(
+                $"   📦 {(info.Length / 1024f / 1024f):F2} MB");
+
+            Console.WriteLine(
+                $"   🕒 {info.CreationTime}");
+
+            Console.WriteLine(
+                $"   📍 {info.FullName}");
+
+            Console.WriteLine();
+        }
     }
 
-    foreach (string file in files)
+    public async Task<string> NormalizeVideo(string inputVideo)
     {
-        FileInfo info =
-            new FileInfo(file);
+        string outputPath =
+            Path.Combine(
+                "/tmp",
+                $"normalized_{Guid.NewGuid()}.mp4");
 
-        Console.WriteLine(
-            $"🎬 {info.Name}");
+        string arguments =
+            $"-i \"{inputVideo}\" " +
+            $"-vf scale=1920:1080,fps=30 " +
+            $"-c:v libx264 " +
+            $"-preset veryfast " +
+            $"-c:a aac " +
+            $"-y " +
+            $"\"{outputPath}\"";
 
-        Console.WriteLine(
-            $"   📦 {(info.Length / 1024f / 1024f):F2} MB");
+        await RunFfmpeg(arguments);
 
-        Console.WriteLine(
-            $"   🕒 {info.CreationTime}");
-
-        Console.WriteLine(
-            $"   📍 {info.FullName}");
-
-        Console.WriteLine();
+        return outputPath;
     }
-}
+
+    public async Task<string> ConcatVideos(string firstVideo, string secondVideo)
+    {
+        string listPath =
+            Path.Combine(
+                "/tmp",
+                $"list_{Guid.NewGuid()}.txt");
+
+        await File.WriteAllTextAsync(
+            listPath,
+            $"file '{firstVideo}'\n" +
+            $"file '{secondVideo}'");
+
+        string outputPath =
+            Path.Combine(
+                "/tmp",
+                $"concat_{Guid.NewGuid()}.mp4");
+
+        string arguments =
+            $"-f concat " +
+            $"-safe 0 " +
+            $"-i \"{listPath}\" " +
+            $"-c copy " +
+            $"-y " +
+            $"\"{outputPath}\"";
+
+        await RunFfmpeg(arguments);
+
+        File.Delete(listPath);
+
+        return outputPath;
+    }
+
+    private async Task RunFfmpeg(string arguments)
+    {
+        Process process =
+            new Process();
+
+        process.StartInfo.FileName =
+            "ffmpeg";
+
+        process.StartInfo.Arguments =
+            arguments;
+
+        process.StartInfo.RedirectStandardError =
+            true;
+
+        process.StartInfo.UseShellExecute =
+            false;
+
+        process.Start();
+
+        string output =
+            await process.StandardError
+                .ReadToEndAsync();
+
+        await process.WaitForExitAsync();
+
+        Console.WriteLine(output);
+
+        if (process.ExitCode != 0)
+        {
+            throw new Exception(output);
+        }
+    }
 }
