@@ -127,8 +127,8 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
     // LIMPIAR TEMPORALES
     // =========================
 
-    File.Delete(inputPath);
-    File.Delete(trimmedPath);
+    //File.Delete(inputPath);
+    //File.Delete(trimmedPath);
 
     // =========================
     // DEVOLVER VIDEO
