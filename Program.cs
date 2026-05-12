@@ -114,6 +114,8 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
     string trimmedPath =
         await ffmpeg.TrimVideo();
 
+    FfmpegModel.ShowTemporaryVideos();
+
     // =========================
     // LEER RESULTADO
     // =========================

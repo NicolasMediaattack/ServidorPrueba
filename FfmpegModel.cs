@@ -124,4 +124,54 @@ public class FfmpegModel
             output,
             System.Globalization.CultureInfo.InvariantCulture);
     }
+
+    public static void ShowTemporaryVideos()
+{
+    Console.ForegroundColor =
+        ConsoleColor.Cyan;
+
+    Console.WriteLine(
+        "\n==============================");
+
+    Console.WriteLine(
+        "📂 VIDEOS TEMPORALES EN /tmp");
+
+    Console.WriteLine(
+        "==============================");
+
+    Console.ResetColor();
+
+    string[] files =
+        Directory.GetFiles(
+            "/tmp",
+            "*.mp4");
+
+    if (files.Length == 0)
+    {
+        Console.WriteLine(
+            "No hay videos temporales");
+
+        return;
+    }
+
+    foreach (string file in files)
+    {
+        FileInfo info =
+            new FileInfo(file);
+
+        Console.WriteLine(
+            $"🎬 {info.Name}");
+
+        Console.WriteLine(
+            $"   📦 {(info.Length / 1024f / 1024f):F2} MB");
+
+        Console.WriteLine(
+            $"   🕒 {info.CreationTime}");
+
+        Console.WriteLine(
+            $"   📍 {info.FullName}");
+
+        Console.WriteLine();
+    }
+}
 }
