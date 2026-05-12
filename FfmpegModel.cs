@@ -184,7 +184,7 @@ public class FfmpegModel
 
         string arguments =
             $"-i \"{inputVideo}\" " +
-            $"-vf scale=1920:1080,fps=30 " +
+            $"-vf scale=1280:720,fps=30 " +
             $"-c:v libx264 " +
             $"-preset veryfast " +
             $"-c:a aac " +
