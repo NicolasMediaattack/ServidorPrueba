@@ -1,9 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "TSxlttAMG20=",
+  "dgSpecHash": "q1EFY4LAYU0=",
   "success": true,
   "projectFilePath": "/Users/Nicolas/ServidorPrueba/ServidorPrueba/ServidorPrueba.csproj",
   "expectedPackageFiles": [
+    "/Users/Nicolas/.nuget/packages/system.io.pipelines/9.0.0/system.io.pipelines.9.0.0.nupkg.sha512",
+    "/Users/Nicolas/.nuget/packages/system.text.encodings.web/9.0.0/system.text.encodings.web.9.0.0.nupkg.sha512",
+    "/Users/Nicolas/.nuget/packages/system.text.json/9.0.0/system.text.json.9.0.0.nupkg.sha512",
     "/Users/Nicolas/.nuget/packages/xabe.ffmpeg/6.0.2/xabe.ffmpeg.6.0.2.nupkg.sha512",
     "/Users/Nicolas/.nuget/packages/xabe.ffmpeg.downloader/6.0.2/xabe.ffmpeg.downloader.6.0.2.nupkg.sha512",
     "/Users/Nicolas/.nuget/packages/microsoft.netcore.app.ref/8.0.24/microsoft.netcore.app.ref.8.0.24.nupkg.sha512",
