@@ -1,4 +1,9 @@
+// =========================
+// FFMPEGMODEL.cs
+// =========================
+
 using System.Diagnostics;
+using System.Globalization;
 
 public class FfmpegModel
 {
@@ -11,17 +16,22 @@ public class FfmpegModel
         float minDuration,
         float maxDuration)
     {
-        this.videoPath = videoPath;
-        this.minDuration = minDuration;
-        this.maxDuration = maxDuration;
+        this.videoPath =
+            videoPath;
+
+        this.minDuration =
+            minDuration;
+
+        this.maxDuration =
+            maxDuration;
     }
+
+    // =========================
+    // TRIM VIDEO
+    // =========================
 
     public async Task<string> TrimVideo()
     {
-        // =========================
-        // DURACIÓN VIDEO
-        // =========================
-
         double totalSeconds =
             await GetVideoDuration();
 
@@ -36,18 +46,10 @@ public class FfmpegModel
                 "Duración inválida");
         }
 
-        // =========================
-        // OUTPUT
-        // =========================
-
         string outputPath =
             Path.Combine(
                 "/tmp",
                 $"trimmed_{Guid.NewGuid()}.mp4");
-
-        // =========================
-        // ARGUMENTOS
-        // =========================
 
         string arguments =
             $"-ss {minDuration} " +
@@ -56,10 +58,118 @@ public class FfmpegModel
             $"-c copy " +
             $"\"{outputPath}\" -y";
 
-        // =========================
-        // PROCESO
-        // =========================
+        await RunFfmpeg(arguments);
 
+        return outputPath;
+    }
+
+    // =========================
+    // GET DURATION
+    // =========================
+
+    private async Task<double> GetVideoDuration()
+    {
+        Process process =
+            new Process();
+
+        process.StartInfo.FileName =
+            "ffprobe";
+
+        process.StartInfo.Arguments =
+            $"-v error " +
+            $"-show_entries format=duration " +
+            $"-of default=noprint_wrappers=1:nokey=1 " +
+            $"\"{videoPath}\"";
+
+        process.StartInfo.RedirectStandardOutput =
+            true;
+
+        process.StartInfo.UseShellExecute =
+            false;
+
+        process.Start();
+
+        string output =
+            await process.StandardOutput
+                .ReadToEndAsync();
+
+        await process.WaitForExitAsync();
+
+        return double.Parse(
+            output,
+            CultureInfo.InvariantCulture);
+    }
+
+    // =========================
+    // NORMALIZE
+    // =========================
+
+    public async Task<string> NormalizeVideo(
+        string inputVideo)
+    {
+        string outputPath =
+            Path.Combine(
+                "/tmp",
+                $"normalized_{Guid.NewGuid()}.mp4");
+
+        string arguments =
+            $"-i \"{inputVideo}\" " +
+            $"-vf scale=1280:720,fps=30 " +
+            $"-c:v libx264 " +
+            $"-preset veryfast " +
+            $"-c:a aac " +
+            $"-y " +
+            $"\"{outputPath}\"";
+
+        await RunFfmpeg(arguments);
+
+        return outputPath;
+    }
+
+    // =========================
+    // CONCAT VIDEOS
+    // =========================
+
+    public async Task<(string videoPath, string listPath)>
+        ConcatVideos(
+            string firstVideo,
+            string secondVideo)
+    {
+        string listPath =
+            Path.Combine(
+                "/tmp",
+                $"list_{Guid.NewGuid()}.txt");
+
+        await File.WriteAllTextAsync(
+            listPath,
+            $"file '{firstVideo}'\n" +
+            $"file '{secondVideo}'");
+
+        string outputPath =
+            Path.Combine(
+                "/tmp",
+                $"concat_{Guid.NewGuid()}.mp4");
+
+        string arguments =
+            $"-f concat " +
+            $"-safe 0 " +
+            $"-i \"{listPath}\" " +
+            $"-c copy " +
+            $"-y " +
+            $"\"{outputPath}\"";
+
+        await RunFfmpeg(arguments);
+
+        return (outputPath, listPath);
+    }
+
+    // =========================
+    // RUN FFMPEG
+    // =========================
+
+    private async Task RunFfmpeg(
+        string arguments)
+    {
         Process process =
             new Process();
 
@@ -89,41 +199,11 @@ public class FfmpegModel
         {
             throw new Exception(output);
         }
-
-        return outputPath;
     }
 
-    private async Task<double> GetVideoDuration()
-    {
-        Process process =
-            new Process();
-
-        process.StartInfo.FileName =
-            "ffprobe";
-
-        process.StartInfo.Arguments =
-            $"-v error -show_entries format=duration " +
-            $"-of default=noprint_wrappers=1:nokey=1 " +
-            $"\"{videoPath}\"";
-
-        process.StartInfo.RedirectStandardOutput =
-            true;
-
-        process.StartInfo.UseShellExecute =
-            false;
-
-        process.Start();
-
-        string output =
-            await process.StandardOutput
-                .ReadToEndAsync();
-
-        await process.WaitForExitAsync();
-
-        return double.Parse(
-            output,
-            System.Globalization.CultureInfo.InvariantCulture);
-    }
+    // =========================
+    // DEBUG TMP
+    // =========================
 
     public static void ShowTemporaryVideos()
     {
@@ -172,92 +252,6 @@ public class FfmpegModel
                 $"   📍 {info.FullName}");
 
             Console.WriteLine();
-        }
-    }
-
-    public async Task<string> NormalizeVideo(string inputVideo)
-    {
-        string outputPath =
-            Path.Combine(
-                "/tmp",
-                $"normalized_{Guid.NewGuid()}.mp4");
-
-        string arguments =
-            $"-i \"{inputVideo}\" " +
-            $"-vf scale=1280:720,fps=30 " +
-            $"-c:v libx264 " +
-            $"-preset veryfast " +
-            $"-c:a aac " +
-            $"-y " +
-            $"\"{outputPath}\"";
-
-        await RunFfmpeg(arguments);
-
-        return outputPath;
-    }
-
-    public async Task<string> ConcatVideos(string firstVideo, string secondVideo)
-    {
-        string listPath =
-            Path.Combine(
-                "/tmp",
-                $"list_{Guid.NewGuid()}.txt");
-
-        await File.WriteAllTextAsync(
-            listPath,
-            $"file '{firstVideo}'\n" +
-            $"file '{secondVideo}'");
-
-        string outputPath =
-            Path.Combine(
-                "/tmp",
-                $"concat_{Guid.NewGuid()}.mp4");
-
-        string arguments =
-            $"-f concat " +
-            $"-safe 0 " +
-            $"-i \"{listPath}\" " +
-            $"-c copy " +
-            $"-y " +
-            $"\"{outputPath}\"";
-
-        await RunFfmpeg(arguments);
-
-        File.Delete(listPath);
-
-        return outputPath;
-    }
-
-    private async Task RunFfmpeg(string arguments)
-    {
-        Process process =
-            new Process();
-
-        process.StartInfo.FileName =
-            "ffmpeg";
-
-        process.StartInfo.Arguments =
-            arguments;
-
-        process.StartInfo.RedirectStandardError =
-            true;
-
-        process.StartInfo.UseShellExecute =
-            false;
-
-        process.Start();
-
-        string output =
-            await process.StandardError
-                .ReadToEndAsync();
-
-        await process.WaitForExitAsync();
-
-        Console.WriteLine(output);
-
-        if (process.ExitCode != 0)
-        {
-            throw new Exception(output);
         }
     }
 }
