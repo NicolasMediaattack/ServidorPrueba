@@ -260,17 +260,4 @@ public class FfmpegModel
             throw new Exception(output);
         }
     }
-
-    public async Task ConcatFromList(string listPath, string outputPath)
-    {
-        string arguments =
-            $"-f concat " +
-            $"-safe 0 " +
-            $"-i \"{listPath}\" " +
-            $"-c copy " +
-            $"-y " +
-            $"\"{outputPath}\"";
-
-        await RunFfmpeg(arguments);
-    }
 }

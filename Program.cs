@@ -124,84 +124,36 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
             $"📏 Normalized: {normalizedPath}");
 
         // =========================
-        // CARPETA TRIMS
-        // =========================
-
-        string trimsFolder =
-            "/tmp/trims";
-
-        Directory.CreateDirectory(
-            trimsFolder);
-
-        // =========================
-        // GUARDAR NORMALIZED
-        // =========================
-
-        string storedVideoPath =
-            Path.Combine(
-                trimsFolder,
-                $"{DateTime.Now:yyyyMMdd_HHmmss}_{Guid.NewGuid()}.mp4");
-
-        File.Copy(
-            normalizedPath,
-            storedVideoPath,
-            true);
-
-        Console.WriteLine(
-            $"💾 Stored: {storedVideoPath}");
-
-        // =========================
-        // TODOS LOS VIDEOS
-        // =========================
-
-        string[] allVideos =
-            Directory.GetFiles(
-                trimsFolder,
-                "*.mp4")
-            .OrderBy(x => x)
-            .ToArray();
-
-        Console.WriteLine(
-            $"🎞️ Total videos: {allVideos.Length}");
-
-        // =========================
-        // LIST.TXT COMPLETO
-        // =========================
-
-        string listPath =
-            Path.Combine(
-                "/tmp",
-                "list.txt");
-
-        List<string> lines =
-            new List<string>();
-
-        foreach (string videoFile in allVideos)
-        {
-            lines.Add(
-                $"file '{videoFile}'");
-        }
-
-        await File.WriteAllLinesAsync(
-            listPath,
-            lines);
-
-        Console.WriteLine(
-            $"📝 List generado: {listPath}");
-
-        // =========================
         // FINAL VIDEO
         // =========================
 
         string finalVideoPath =
             "/tmp/final.mp4";
 
-        await ffmpeg.ConcatFromList(
-            listPath,
-            finalVideoPath);
+        // =========================
+        // PRIMER VIDEO
+        // =========================
 
-        Console.WriteLine(
-            "✅ Video final regenerado");
+        if (!File.Exists(finalVideoPath))
+        {
+            File.Copy(
+                normalizedPath,
+                finalVideoPath,
+                true);
+        }
+        else
+        {
+            string concatPath =
+                await ffmpeg.ConcatVideos(
+                    finalVideoPath,
+                    normalizedPath);
+
+            File.Delete(finalVideoPath);
+
+            File.Move(
+                concatPath,
+                finalVideoPath);
+        }
 
         Console.WriteLine(
             "✅ Video concatenado");
