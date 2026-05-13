@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
-using System.IO.Compression;
 
 SemaphoreSlim semaphore =
     new SemaphoreSlim(1, 1);
@@ -149,7 +148,7 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
                     finalVideoPath,
                     normalizedPath);
 
-            //File.Delete(finalVideoPath);
+            File.Delete(finalVideoPath);
 
             File.Move(
                 concatPath,
@@ -191,32 +190,5 @@ Console.WriteLine("      SERVIDOR INICIADO          ");
 Console.WriteLine("=================================");
 
 Console.ResetColor();
-
-app.MapGet("/tmp-info", async () =>
-{
-    var resultado = new
-    {
-        archivos = Directory.GetFiles("/tmp")
-            .Select(f =>
-            {
-                var info = new FileInfo(f);
-                return new
-                {
-                    nombre = info.Name,
-                    tamaño_mb = (info.Length / 1024f / 1024f).ToString("F2"),
-                    creado = info.CreationTime.ToString(),
-                    ruta = info.FullName
-                };
-            }).ToList(),
-
-        contenido_lists = Directory.GetFiles("/tmp", "list*.txt")
-            .ToDictionary(
-                f => Path.GetFileName(f),
-                f => File.ReadAllText(f)
-            )
-    };
-
-    return Results.Json(resultado);
-});
 
 app.Run();
