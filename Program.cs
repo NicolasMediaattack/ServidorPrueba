@@ -166,58 +166,17 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         FfmpegModel.ShowTemporaryVideos();
 
         // =========================
-        // ZIP FINAL
-        // =========================
-
-        string zipPath =
-            Path.Combine(
-                "/tmp",
-                $"debug_{Guid.NewGuid()}.zip");
-
-        // crear zip
-        using (ZipArchive zip =
-            ZipFile.Open(zipPath, ZipArchiveMode.Create))
-        {
-            // =========================
-            // TODOS LOS MP4
-            // =========================
-
-            string[] mp4Files =
-                Directory.GetFiles("/tmp", "*.mp4");
-
-            foreach (string file in mp4Files)
-            {
-                zip.CreateEntryFromFile(
-                    file,
-                    Path.GetFileName(file));
-            }
-
-            // =========================
-            // TODOS LOS TXT
-            // =========================
-
-            string[] txtFiles =
-                Directory.GetFiles("/tmp", "*.txt");
-
-            foreach (string file in txtFiles)
-            {
-                zip.CreateEntryFromFile(
-                    file,
-                    Path.GetFileName(file));
-            }
-        }
-
-        // =========================
         // RESPUESTA
         // =========================
 
-        byte[] zipBytes =
-            await File.ReadAllBytesAsync(zipPath);
+        byte[] bytes =
+            await File.ReadAllBytesAsync(
+                finalVideoPath);
 
         return Results.File(
-            zipBytes,
-            "application/zip",
-            "tmp.zip");
+            bytes,
+            "video/mp4",
+            "final.mp4");
     }
     finally
     {
