@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
+using System.IO.Compression;
 
 SemaphoreSlim semaphore =
     new SemaphoreSlim(1, 1);
@@ -165,17 +166,58 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         FfmpegModel.ShowTemporaryVideos();
 
         // =========================
+        // ZIP FINAL
+        // =========================
+
+        string zipPath =
+            Path.Combine(
+                "/tmp",
+                $"debug_{Guid.NewGuid()}.zip");
+
+        // crear zip
+        using (ZipArchive zip =
+            ZipFile.Open(zipPath, ZipArchiveMode.Create))
+        {
+            // =========================
+            // TODOS LOS MP4
+            // =========================
+
+            string[] mp4Files =
+                Directory.GetFiles("/tmp", "*.mp4");
+
+            foreach (string file in mp4Files)
+            {
+                zip.CreateEntryFromFile(
+                    file,
+                    Path.GetFileName(file));
+            }
+
+            // =========================
+            // TODOS LOS TXT
+            // =========================
+
+            string[] txtFiles =
+                Directory.GetFiles("/tmp", "*.txt");
+
+            foreach (string file in txtFiles)
+            {
+                zip.CreateEntryFromFile(
+                    file,
+                    Path.GetFileName(file));
+            }
+        }
+
+        // =========================
         // RESPUESTA
         // =========================
 
-        byte[] bytes =
-            await File.ReadAllBytesAsync(
-                finalVideoPath);
+        byte[] zipBytes =
+            await File.ReadAllBytesAsync(zipPath);
 
         return Results.File(
-            bytes,
-            "video/mp4",
-            "final.mp4");
+            zipBytes,
+            "application/zip",
+            "tmp.zip");
     }
     finally
     {

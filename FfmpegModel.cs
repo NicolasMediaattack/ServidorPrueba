@@ -16,6 +16,7 @@ public class FfmpegModel
         this.maxDuration = maxDuration;
     }
 
+    // MÉTODO PARA RECORTAR EL VIDEO
     public async Task<string> TrimVideo()
     {
         // =========================
@@ -93,6 +94,8 @@ public class FfmpegModel
         return outputPath;
     }
 
+    // MÉTODO PARA OBTENER LA DURACIÓN DEL VIDEO
+
     private async Task<double> GetVideoDuration()
     {
         Process process =
@@ -124,6 +127,8 @@ public class FfmpegModel
             output,
             System.Globalization.CultureInfo.InvariantCulture);
     }
+
+    // MÉTODO PARA MOSTRAR LOS VIDEOS TEMPORALES EN /tmp
 
     public static void ShowTemporaryVideos()
     {
