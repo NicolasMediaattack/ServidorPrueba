@@ -1,10 +1,5 @@
-﻿// =========================
-// PROGRAM.cs (SERVIDOR)
-// =========================
-
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Globalization;
-using System.IO.Compression;
 
 SemaphoreSlim semaphore =
     new SemaphoreSlim(1, 1);
@@ -23,16 +18,13 @@ try
 
     process.Start();
 
-    string output =
-        process.StandardOutput.ReadToEnd();
+    string output = process.StandardOutput.ReadToEnd();
 
     process.WaitForExit();
 
-    Console.ForegroundColor =
-        ConsoleColor.Green;
+    Console.ForegroundColor = ConsoleColor.Green;
 
-    Console.WriteLine(
-        "✅ FFmpeg encontrado");
+    Console.WriteLine("✅ FFmpeg encontrado");
 
     Console.ResetColor();
 
@@ -40,24 +32,20 @@ try
 }
 catch (Exception ex)
 {
-    Console.ForegroundColor =
-        ConsoleColor.Red;
+    Console.ForegroundColor = ConsoleColor.Red;
 
-    Console.WriteLine(
-        "❌ FFmpeg no encontrado");
+    Console.WriteLine("❌ FFmpeg no encontrado");
 
     Console.WriteLine(ex.Message);
 
     Console.ResetColor();
 }
 
-var builder =
-    WebApplication.CreateBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
 
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.Limits.MaxRequestBodySize =
-        500_000_000;
+    options.Limits.MaxRequestBodySize = 500_000_000;
 });
 
 var app = builder.Build();
@@ -109,13 +97,6 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
             $"🎬 Input: {inputPath}");
 
         // =========================
-        // LISTA VIDEOS TRIMMED
-        // =========================
-
-        List<string> trimmedVideos =
-            new List<string>();
-
-        // =========================
         // TRIM
         // =========================
 
@@ -127,8 +108,6 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
 
         string trimmedPath =
             await ffmpeg.TrimVideo();
-
-        trimmedVideos.Add(trimmedPath);
 
         Console.WriteLine(
             $"✂️ Trimmed: {trimmedPath}");
@@ -151,9 +130,6 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         string finalVideoPath =
             "/tmp/final.mp4";
 
-        string? lastListPath =
-            null;
-
         // =========================
         // PRIMER VIDEO
         // =========================
@@ -167,16 +143,10 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         }
         else
         {
-            var concatResult =
+            string concatPath =
                 await ffmpeg.ConcatVideos(
                     finalVideoPath,
                     normalizedPath);
-
-            string concatPath =
-                concatResult.videoPath;
-
-            lastListPath =
-                concatResult.listPath;
 
             File.Delete(finalVideoPath);
 
@@ -195,63 +165,17 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         FfmpegModel.ShowTemporaryVideos();
 
         // =========================
-        // ZIP
-        // =========================
-
-        string zipPath =
-            Path.Combine(
-                "/tmp",
-                $"resultado_{Guid.NewGuid()}.zip");
-
-        using (ZipArchive zip =
-            ZipFile.Open(
-                zipPath,
-                ZipArchiveMode.Create))
-        {
-            // =========================
-            // FINAL VIDEO
-            // =========================
-
-            zip.CreateEntryFromFile(
-                finalVideoPath,
-                "final.mp4");
-
-            // =========================
-            // LIST.TXT
-            // =========================
-
-            if (!string.IsNullOrEmpty(lastListPath)
-                && File.Exists(lastListPath))
-            {
-                zip.CreateEntryFromFile(
-                    lastListPath,
-                    "list.txt");
-            }
-
-            // =========================
-            // TRIMMED VIDEOS
-            // =========================
-
-            foreach (string trimmed in trimmedVideos)
-            {
-                zip.CreateEntryFromFile(
-                    trimmed,
-                    $"trimmed/{Path.GetFileName(trimmed)}");
-            }
-        }
-
-        // =========================
         // RESPUESTA
         // =========================
 
-        byte[] zipBytes =
+        byte[] bytes =
             await File.ReadAllBytesAsync(
-                zipPath);
+                finalVideoPath);
 
         return Results.File(
-            zipBytes,
-            "application/zip",
-            "resultado.zip");
+            bytes,
+            "video/mp4",
+            "final.mp4");
     }
     finally
     {
@@ -259,17 +183,11 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
     }
 });
 
-Console.ForegroundColor =
-    ConsoleColor.Cyan;
+Console.ForegroundColor = ConsoleColor.Cyan;
 
-Console.WriteLine(
-    "=================================");
-
-Console.WriteLine(
-    "      SERVIDOR INICIADO          ");
-
-Console.WriteLine(
-    "=================================");
+Console.WriteLine("=================================");
+Console.WriteLine("      SERVIDOR INICIADO          ");
+Console.WriteLine("=================================");
 
 Console.ResetColor();
 
