@@ -168,33 +168,14 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         // RESPUESTA
         // =========================
 
-        var multipartContent = new MultipartContent("mixed");
+        byte[] bytes =
+            await File.ReadAllBytesAsync(
+                finalVideoPath);
 
-        // Video final concatenado
-        byte[] finalBytes = await File.ReadAllBytesAsync(finalVideoPath);
-        var finalContent = new ByteArrayContent(finalBytes);
-        finalContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("video/mp4");
-        finalContent.Headers.ContentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("attachment")
-        {
-            FileName = "final.mp4",
-            Name = "final"
-        };
-        multipartContent.Add(finalContent);
-
-        // Video trimmeado
-        byte[] trimmedBytes = await File.ReadAllBytesAsync(trimmedPath);
-        var trimmedContent = new ByteArrayContent(trimmedBytes);
-        trimmedContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("video/mp4");
-        trimmedContent.Headers.ContentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("attachment")
-        {
-            FileName = "trimmed.mp4",
-            Name = "trimmed"
-        };
-        multipartContent.Add(trimmedContent);
-
-        return Results.Stream(
-            async stream => await multipartContent.CopyToAsync(stream),
-            multipartContent.Headers.ContentType?.ToString() ?? "multipart/mixed");
+        return Results.File(
+            bytes,
+            "video/mp4",
+            "final.mp4");
     }
     finally
     {
