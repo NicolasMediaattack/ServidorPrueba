@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
+using System.IO.Compression;
 
 SemaphoreSlim semaphore =
     new SemaphoreSlim(1, 1);
@@ -168,14 +169,33 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         // RESPUESTA
         // =========================
 
-        byte[] bytes =
+        string zipPath =
+            Path.Combine(
+                "/tmp",
+                $"{Guid.NewGuid()}.zip");
+
+        using (ZipArchive zip =
+            ZipFile.Open(
+                zipPath,
+                ZipArchiveMode.Create))
+        {
+            zip.CreateEntryFromFile(
+                trimmedPath,
+                "trimmed.mp4");
+
+            zip.CreateEntryFromFile(
+                finalVideoPath,
+                "final.mp4");
+        }
+
+        byte[] zipBytes =
             await File.ReadAllBytesAsync(
-                finalVideoPath);
+                zipPath);
 
         return Results.File(
-            bytes,
-            "video/mp4",
-            "final.mp4");
+            zipBytes,
+            "application/zip",
+            "videos.zip");
     }
     finally
     {
