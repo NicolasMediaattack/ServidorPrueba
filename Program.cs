@@ -124,78 +124,72 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         Console.WriteLine(
             $"📏 Normalized: {normalizedPath}");
 
-        // =========================
-        // FINAL VIDEO
-        // =========================
+// =========================
+// FINAL VIDEO
+// =========================
 
-        string finalVideoPath =
-            "/tmp/final.mp4";
+string finalVideoPath = "/tmp/final.mp4";
+string? listPath = null;
 
-        // =========================
-        // PRIMER VIDEO
-        // =========================
+// =========================
+// PRIMER VIDEO O CONCAT
+// =========================
 
-        if (!File.Exists(finalVideoPath))
-        {
-            File.Copy(
-                normalizedPath,
-                finalVideoPath,
-                true);
-        }
-        else
-        {
-            string concatPath =
-                await ffmpeg.ConcatVideos(
-                    finalVideoPath,
-                    normalizedPath);
+if (!File.Exists(finalVideoPath))
+{
+    File.Copy(normalizedPath, finalVideoPath, true);
+}
+else
+{
+    var (concatPath, concatListPath) =
+        await ffmpeg.ConcatVideos(finalVideoPath, normalizedPath);
 
-            File.Delete(finalVideoPath);
+    File.Delete(finalVideoPath);
+    File.Move(concatPath, finalVideoPath);
 
-            File.Move(
-                concatPath,
-                finalVideoPath);
-        }
+    listPath = concatListPath; // guardamos para el zip
+}
 
-        Console.WriteLine(
-            "✅ Video concatenado");
+Console.WriteLine("✅ Video concatenado");
 
-        // =========================
-        // DEBUG
-        // =========================
+// =========================
+// DEBUG
+// =========================
 
-        FfmpegModel.ShowTemporaryVideos();
+FfmpegModel.ShowTemporaryVideos();
 
-        // =========================
-        // RESPUESTA
-        // =========================
+// =========================
+// RESPUESTA
+// =========================
 
-        string zipPath =
-            Path.Combine(
-                "/tmp",
-                $"{Guid.NewGuid()}.zip");
+string zipPath =
+    Path.Combine("/tmp", $"{Guid.NewGuid()}.zip");
 
-        using (ZipArchive zip =
-            ZipFile.Open(
-                zipPath,
-                ZipArchiveMode.Create))
-        {
-            zip.CreateEntryFromFile(
-                trimmedPath,
-                "trimmed.mp4");
+using (ZipArchive zip =
+    ZipFile.Open(zipPath, ZipArchiveMode.Create))
+{
+    zip.CreateEntryFromFile(trimmedPath, "trimmed.mp4");
+    zip.CreateEntryFromFile(finalVideoPath, "final.mp4");
 
-            zip.CreateEntryFromFile(
-                finalVideoPath,
-                "final.mp4");
-        }
+    if (listPath != null)
+    {
+        zip.CreateEntryFromFile(listPath, "concat_list.txt"); // ✅
+    }
+}
 
-        byte[] zipBytes =
-            await File.ReadAllBytesAsync(
-                zipPath);
+// 🗑️ Borrar el list después de añadirlo al zip
+if (listPath != null)
+{
+    File.Delete(listPath);
+}
 
-        return Results.File(
-            zipBytes,
-            "application/zip",
-            "videos.zip");
+byte[] zipBytes =
+    await File.ReadAllBytesAsync(zipPath);
+
+return Results.File(
+    zipBytes,
+    "application/zip",
+    "videos.zip");
     }
     finally
     {

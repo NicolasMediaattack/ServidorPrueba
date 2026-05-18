@@ -201,12 +201,11 @@ public class FfmpegModel
         return outputPath;
     }
 
-    public async Task<string> ConcatVideos(string firstVideo, string secondVideo)
+    public async Task<(string outputPath, string listPath)> ConcatVideos(
+    string firstVideo, string secondVideo)
     {
         string listPath =
-            Path.Combine(
-                "/tmp",
-                $"list_{Guid.NewGuid()}.txt");
+            Path.Combine("/tmp", $"list_{Guid.NewGuid()}.txt");
 
         await File.WriteAllTextAsync(
             listPath,
@@ -214,9 +213,7 @@ public class FfmpegModel
             $"file '{secondVideo}'");
 
         string outputPath =
-            Path.Combine(
-                "/tmp",
-                $"concat_{Guid.NewGuid()}.mp4");
+            Path.Combine("/tmp", $"concat_{Guid.NewGuid()}.mp4");
 
         string arguments =
             $"-f concat " +
@@ -228,9 +225,9 @@ public class FfmpegModel
 
         await RunFfmpeg(arguments);
 
-        File.Delete(listPath);
+        // ❌ Ya no borramos el listPath aquí
 
-        return outputPath;
+        return (outputPath, listPath);
     }
 
     private async Task RunFfmpeg(string arguments)
