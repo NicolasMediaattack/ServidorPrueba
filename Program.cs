@@ -131,6 +131,8 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         string finalVideoPath =
             "/tmp/final.mp4";
 
+        string? listPath = null;
+
         // =========================
         // PRIMER VIDEO
         // =========================
@@ -144,10 +146,16 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         }
         else
         {
-            string concatPath =
+            var concatResult =
                 await ffmpeg.ConcatVideos(
                     finalVideoPath,
                     normalizedPath);
+
+            string concatPath =
+                concatResult.concatPath;
+
+            listPath =
+                concatResult.listPath;
 
             File.Delete(finalVideoPath);
 
@@ -186,6 +194,10 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
             zip.CreateEntryFromFile(
                 finalVideoPath,
                 "final.mp4");
+
+            zip.CreateEntryFromFile(
+                listPath,
+                "list.txt");
         }
 
         byte[] zipBytes =

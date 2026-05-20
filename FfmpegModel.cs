@@ -201,7 +201,7 @@ public class FfmpegModel
         return outputPath;
     }
 
-    public async Task<string> ConcatVideos(string firstVideo, string secondVideo)
+    public async Task<(string concatPath, string listPath)> ConcatVideos(string firstVideo, string secondVideo)
     {
         string listPath =
             Path.Combine(
@@ -228,9 +228,9 @@ public class FfmpegModel
 
         await RunFfmpeg(arguments);
 
-        File.Delete(listPath);
+        //File.Delete(listPath);
 
-        return outputPath;
+        return (outputPath, listPath);
     }
 
     private async Task RunFfmpeg(string arguments)
