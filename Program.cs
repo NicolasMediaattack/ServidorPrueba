@@ -2,7 +2,6 @@
 using System.Globalization;
 using System.IO.Compression;
 
-// =========================
 SemaphoreSlim semaphore =
     new SemaphoreSlim(1, 1);
 
