@@ -52,13 +52,8 @@ public class FfmpegModel
             $"-ss {startTime} " +
             $"-i \"{videoPath}\" " +
             $"-t {outputDuration} " +
-            $"-c:v libx264 " +
-            $"-preset veryfast " +
-            $"-pix_fmt yuv420p " +
-            $"-movflags +faststart " +
-            $"-an " +
-            $"-y " +
-            $"\"{outputPath}\"";
+            $"-c copy " +
+            $"\"{outputPath}\" -y";
 
         // =========================
         // PROCESO
