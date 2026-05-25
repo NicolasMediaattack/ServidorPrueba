@@ -186,8 +186,9 @@ public class FfmpegModel
                 $"normalized_{Guid.NewGuid()}.mp4");
 
         string arguments =
+            $"-loglevel error " +
             $"-i \"{inputVideo}\" " +
-            $"-vf scale=1280:720,fps=30 " +
+            $"-vf scale=1280:720,fps=30,format=yuv420p " +
             $"-c:v libx264 " +
             $"-preset veryfast " +
             $"-c:a aac " +
