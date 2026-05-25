@@ -3,8 +3,8 @@ using System.Diagnostics;
 public class FfmpegModel
 {
     private readonly string videoPath;
-    private readonly float minDuration;
-    private readonly float maxDuration;
+    private readonly float startTime;
+    private readonly float endTime;
 
     public FfmpegModel(
         string videoPath,
@@ -12,8 +12,8 @@ public class FfmpegModel
         float maxDuration)
     {
         this.videoPath = videoPath;
-        this.minDuration = minDuration;
-        this.maxDuration = maxDuration;
+        this.startTime = minDuration;
+        this.endTime = maxDuration;
     }
 
     // MÉTODO PARA RECORTAR EL VIDEO
@@ -27,9 +27,7 @@ public class FfmpegModel
             await GetVideoDuration();
 
         double outputDuration =
-            totalSeconds
-            - minDuration
-            - maxDuration;
+            endTime - startTime;
 
         if (outputDuration <= 0)
         {
@@ -51,7 +49,7 @@ public class FfmpegModel
         // =========================
 
         string arguments =
-            $"-ss {minDuration} " +
+            $"-ss {startTime} " +
             $"-i \"{videoPath}\" " +
             $"-t {outputDuration} " +
             $"-c copy " +
