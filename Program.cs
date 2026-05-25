@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
-using System.IO.Compression;
+using Microsoft.Extensions.FileProviders;
 
 SemaphoreSlim semaphore =
     new SemaphoreSlim(1, 1);
@@ -19,13 +19,16 @@ try
 
     process.Start();
 
-    string output = process.StandardOutput.ReadToEnd();
+    string output =
+        process.StandardOutput.ReadToEnd();
 
     process.WaitForExit();
 
-    Console.ForegroundColor = ConsoleColor.Green;
+    Console.ForegroundColor =
+        ConsoleColor.Green;
 
-    Console.WriteLine("✅ FFmpeg encontrado");
+    Console.WriteLine(
+        "✅ FFmpeg encontrado");
 
     Console.ResetColor();
 
@@ -33,23 +36,53 @@ try
 }
 catch (Exception ex)
 {
-    Console.ForegroundColor = ConsoleColor.Red;
+    Console.ForegroundColor =
+        ConsoleColor.Red;
 
-    Console.WriteLine("❌ FFmpeg no encontrado");
+    Console.WriteLine(
+        "❌ FFmpeg no encontrado");
 
     Console.WriteLine(ex.Message);
 
     Console.ResetColor();
 }
 
-var builder = WebApplication.CreateBuilder(args);
+var builder =
+    WebApplication.CreateBuilder(args);
 
 builder.WebHost.ConfigureKestrel(options =>
 {
-    options.Limits.MaxRequestBodySize = 500_000_000;
+    options.Limits.MaxRequestBodySize =
+        500_000_000;
 });
 
 var app = builder.Build();
+
+// =========================
+// CARPETA PUBLICA VIDEOS
+// =========================
+
+string publicVideosPath =
+    Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "videos");
+
+Directory.CreateDirectory(
+    publicVideosPath);
+
+// =========================
+// STATIC FILES
+// =========================
+
+app.UseStaticFiles(
+    new StaticFileOptions
+    {
+        FileProvider =
+            new PhysicalFileProvider(
+                publicVideosPath),
+
+        RequestPath = "/videos"
+    });
 
 app.MapPost("/mensaje", async (HttpRequest request) =>
 {
@@ -125,13 +158,16 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
             $"📏 Normalized: {normalizedPath}");
 
         // =========================
-        // FINAL VIDEO
+        // VIDEO FINAL PUBLICO
         // =========================
 
-        string finalVideoPath =
-            "/tmp/final.mp4";
+        string finalVideoName =
+            $"final_{Guid.NewGuid()}.mp4";
 
-        string? listPath = null;
+        string finalVideoPath =
+            Path.Combine(
+                publicVideosPath,
+                finalVideoName);
 
         // =========================
         // PRIMER VIDEO
@@ -144,70 +180,27 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
                 finalVideoPath,
                 true);
         }
-        else
-        {
-            var concatResult =
-                await ffmpeg.ConcatVideos(
-                    finalVideoPath,
-                    normalizedPath);
-
-            string concatPath =
-                concatResult.concatPath;
-
-            listPath =
-                concatResult.listPath;
-
-            File.Delete(finalVideoPath);
-
-            File.Move(
-                concatPath,
-                finalVideoPath);
-        }
 
         Console.WriteLine(
-            "✅ Video concatenado");
+            "✅ Video generado");
 
         // =========================
-        // DEBUG
+        // URL PUBLICA
         // =========================
 
-        FfmpegModel.ShowTemporaryVideos();
+        string videoUrl =
+            $"{request.Scheme}://" +
+            $"{request.Host}/videos/" +
+            $"{finalVideoName}";
+
+        Console.WriteLine(
+            $"🌍 URL: {videoUrl}");
 
         // =========================
         // RESPUESTA
         // =========================
 
-        string zipPath =
-            Path.Combine(
-                "/tmp",
-                $"{Guid.NewGuid()}.zip");
-
-        using (ZipArchive zip =
-            ZipFile.Open(
-                zipPath,
-                ZipArchiveMode.Create))
-        {
-            zip.CreateEntryFromFile(
-                trimmedPath,
-                "trimmed.mp4");
-
-            zip.CreateEntryFromFile(
-                finalVideoPath,
-                "final.mp4");
-
-            zip.CreateEntryFromFile(
-                listPath,
-                "list.txt");
-        }
-
-        byte[] zipBytes =
-            await File.ReadAllBytesAsync(
-                zipPath);
-
-        return Results.File(
-            zipBytes,
-            "application/zip",
-            "videos.zip");
+        return Results.Ok(videoUrl);
     }
     finally
     {
@@ -215,11 +208,17 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
     }
 });
 
-Console.ForegroundColor = ConsoleColor.Cyan;
+Console.ForegroundColor =
+    ConsoleColor.Cyan;
 
-Console.WriteLine("=================================");
-Console.WriteLine("      SERVIDOR INICIADO          ");
-Console.WriteLine("=================================");
+Console.WriteLine(
+    "=================================");
+
+Console.WriteLine(
+    "      SERVIDOR INICIADO          ");
+
+Console.WriteLine(
+    "=================================");
 
 Console.ResetColor();
 
