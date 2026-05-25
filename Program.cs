@@ -60,14 +60,14 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         var form =
             await request.ReadFormAsync();
 
-        float minDuration =
+        float startTime =
             float.Parse(
-                form["minDuration"],
+                form["startTime"],
                 CultureInfo.InvariantCulture);
 
-        float maxDuration =
+        float endTime =
             float.Parse(
-                form["maxDuration"],
+                form["endTime"],
                 CultureInfo.InvariantCulture);
 
         IFormFile? video =
@@ -104,8 +104,8 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         FfmpegModel ffmpeg =
             new FfmpegModel(
                 inputPath,
-                minDuration,
-                maxDuration);
+                startTime,
+                endTime);
 
         string trimmedPath =
             await ffmpeg.TrimVideo();
