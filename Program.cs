@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Globalization;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.AspNetCore.StaticFiles;
 
 SemaphoreSlim semaphore =
     new SemaphoreSlim(1, 1);
@@ -74,6 +75,12 @@ Directory.CreateDirectory(
 // STATIC FILES
 // =========================
 
+var provider =
+    new FileExtensionContentTypeProvider();
+
+provider.Mappings[".mp4"] =
+    "video/mp4";
+
 app.UseStaticFiles(
     new StaticFileOptions
     {
@@ -81,7 +88,10 @@ app.UseStaticFiles(
             new PhysicalFileProvider(
                 publicVideosPath),
 
-        RequestPath = "/videos"
+        RequestPath = "/videos",
+
+        ContentTypeProvider =
+            provider
     });
 
 app.MapPost("/mensaje", async (HttpRequest request) =>
@@ -189,9 +199,7 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         // =========================
 
         string videoUrl =
-            $"{request.Scheme}://" +
-            $"{request.Host}/videos/" +
-            $"{finalVideoName}";
+            $"https://{request.Host}/videos/{finalVideoName}";
 
         Console.WriteLine(
             $"🌍 URL: {videoUrl}");
