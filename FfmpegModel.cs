@@ -97,7 +97,7 @@ public async Task<string> TrimVideo()
             System.Globalization.CultureInfo.InvariantCulture);
     }
 
-    public static void ShowTemporaryVideos()
+    /*public static void ShowTemporaryVideos()
     {
         Console.ForegroundColor =
             ConsoleColor.Cyan;
@@ -199,7 +199,7 @@ public async Task<string> TrimVideo()
         //File.Delete(listPath);
 
         return (outputPath, listPath);
-    }
+    }*/
 
     private async Task RunFfmpeg(string arguments)
     {
