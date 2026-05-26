@@ -59,10 +59,6 @@ builder.WebHost.ConfigureKestrel(options =>
 
 var app = builder.Build();
 
-// =========================
-// CARPETA PUBLICA VIDEOS
-// =========================
-
 string publicVideosPath =
     Path.Combine(
         Directory.GetCurrentDirectory(),
@@ -70,10 +66,6 @@ string publicVideosPath =
 
 Directory.CreateDirectory(
     publicVideosPath);
-
-// =========================
-// STATIC FILES
-// =========================
 
 var provider =
     new FileExtensionContentTypeProvider();
@@ -122,10 +114,6 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
                 "No video");
         }
 
-        // =========================
-        // INPUT
-        // =========================
-
         string inputPath =
             Path.Combine(
                 "/tmp",
@@ -140,10 +128,6 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         Console.WriteLine(
             $"🎬 Input: {inputPath}");
 
-        // =========================
-        // TRIM
-        // =========================
-
         FfmpegModel ffmpeg =
             new FfmpegModel(
                 inputPath,
@@ -156,20 +140,12 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         Console.WriteLine(
             $"✂️ Trimmed: {trimmedPath}");
 
-        // =========================
-        // NORMALIZE
-        // =========================
-
         string normalizedPath =
             await ffmpeg.NormalizeVideo(
                 trimmedPath);
 
         Console.WriteLine(
             $"📏 Normalized: {normalizedPath}");
-
-        // =========================
-        // VIDEO FINAL PUBLICO
-        // =========================
 
         string finalVideoName =
             $"final_{Guid.NewGuid()}.mp4";
@@ -178,10 +154,6 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
             Path.Combine(
                 publicVideosPath,
                 finalVideoName);
-
-        // =========================
-        // PRIMER VIDEO
-        // =========================
 
         if (!File.Exists(finalVideoPath))
         {
@@ -194,19 +166,11 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         Console.WriteLine(
             "✅ Video generado");
 
-        // =========================
-        // URL PUBLICA
-        // =========================
-
         string videoUrl =
             $"https://{request.Host}/videos/{finalVideoName}";
 
         Console.WriteLine(
             $"🌍 URL: {videoUrl}");
-
-        // =========================
-        // RESPUESTA
-        // =========================
 
         return Results.Ok(videoUrl);
     }
