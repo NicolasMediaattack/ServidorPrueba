@@ -134,11 +134,18 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
                 startTime,
                 endTime);
 
-        string finalProcessedPath =
+        string trimmedPath =
             await ffmpeg.TrimVideo();
 
         Console.WriteLine(
-            $"✂️ Video procesado: {finalProcessedPath}");
+            $"✂️ Trimmed: {trimmedPath}");
+
+        string normalizedPath =
+            await ffmpeg.NormalizeVideo(
+                trimmedPath);
+
+        Console.WriteLine(
+            $"📏 Normalized: {normalizedPath}");
 
         string finalVideoName =
             $"final_{Guid.NewGuid()}.mp4";
@@ -148,10 +155,13 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
                 publicVideosPath,
                 finalVideoName);
 
-        File.Copy(
-            finalProcessedPath,
-            finalVideoPath,
-            true);
+        if (!File.Exists(finalVideoPath))
+        {
+            File.Copy(
+                normalizedPath,
+                finalVideoPath,
+                true);
+        }
 
         Console.WriteLine(
             "✅ Video generado");
@@ -169,3 +179,19 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         semaphore.Release();
     }
 });
+
+Console.ForegroundColor =
+    ConsoleColor.Cyan;
+
+Console.WriteLine(
+    "=================================");
+
+Console.WriteLine(
+    "      SERVIDOR INICIADO          ");
+
+Console.WriteLine(
+    "=================================");
+
+Console.ResetColor();
+
+app.Run();
