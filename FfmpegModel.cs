@@ -17,55 +17,55 @@ public class FfmpegModel
         this.endTime = maxDuration;
     }
 
-    public async Task<string> TrimVideo()
+public async Task<string> TrimVideo()
+{
+
+    double totalSeconds =
+        await GetVideoDuration();
+
+    double outputDuration =
+        totalSeconds -
+        startTime -
+        endTime;
+
+    Console.WriteLine($"TOTAL: {totalSeconds}");
+    Console.WriteLine($"START CUT: {startTime}");
+    Console.WriteLine($"END CUT: {endTime}");
+    Console.WriteLine($"FINAL DURATION: {outputDuration}");
+
+    if (outputDuration <= 0)
     {
-
-        double totalSeconds =
-            await GetVideoDuration();
-
-        double outputDuration =
-            totalSeconds -
-            startTime -
-            endTime;
-
-        Console.WriteLine($"TOTAL: {totalSeconds}");
-        Console.WriteLine($"START CUT: {startTime}");
-        Console.WriteLine($"END CUT: {endTime}");
-        Console.WriteLine($"FINAL DURATION: {outputDuration}");
-
-        if (outputDuration <= 0)
-        {
-            throw new Exception(
-                "Duración inválida");
-        }
-
-        string outputPath =
-            Path.Combine(
-                "/tmp",
-                $"trimmed_{Guid.NewGuid()}.mp4");
-
-        string arguments =
-            $"-ss {startTime.ToString(CultureInfo.InvariantCulture)} " +
-            $"-i \"{videoPath}\" " +
-            $"-t {outputDuration.ToString(CultureInfo.InvariantCulture)} " +
-            $"-vf scale=1280:-2 " +
-            $"-r 30 " +
-            $"-c:v libx264 " +
-            $"-preset ultrafast " +
-            $"-crf 28 " +
-            $"-c:a aac " +
-            $"-b:a 128k " +
-            $"-movflags +faststart " +
-            $"-y " +
-
-            $"\"{outputPath}\"";
-
-        Console.WriteLine(arguments);
-
-        await RunFfmpeg(arguments);
-
-        return outputPath;
+        throw new Exception(
+            "Duración inválida");
     }
+
+    string outputPath =
+        Path.Combine(
+            "/tmp",
+            $"trimmed_{Guid.NewGuid()}.mp4");
+
+    string arguments =
+        $"-ss {startTime.ToString(CultureInfo.InvariantCulture)} " +
+        $"-i \"{videoPath}\" " +
+        $"-t {outputDuration.ToString(CultureInfo.InvariantCulture)} " +
+        $"-vf scale=1280:-2 " +
+        $"-r 30 " +
+        $"-c:v libx264 " +
+        $"-preset ultrafast " +
+        $"-crf 28 " +
+        $"-c:a aac " +
+        $"-b:a 128k " +
+        $"-movflags +faststart " +
+        $"-y " +
+
+        $"\"{outputPath}\"";
+
+    Console.WriteLine(arguments);
+
+    await RunFfmpeg(arguments);
+
+    return outputPath;
+}
 
     private async Task<double> GetVideoDuration()
     {
@@ -99,7 +99,7 @@ public class FfmpegModel
             System.Globalization.CultureInfo.InvariantCulture);
     }
 
-    /*public static void ShowTemporaryVideos()
+    public static void ShowTemporaryVideos()
     {
         Console.ForegroundColor =
             ConsoleColor.Cyan;
@@ -201,7 +201,7 @@ public class FfmpegModel
         //File.Delete(listPath);
 
         return (outputPath, listPath);
-    }*/
+    }
 
     private async Task RunFfmpeg(string arguments)
     {
