@@ -24,9 +24,7 @@ public async Task<string> TrimVideo()
         await GetVideoDuration();
 
     double outputDuration =
-        totalSeconds -
-        startTime -
-        endTime;
+    endTime - startTime;
 
     Console.WriteLine($"TOTAL: {totalSeconds}");
     Console.WriteLine($"START CUT: {startTime}");
