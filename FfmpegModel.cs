@@ -29,6 +29,10 @@ public class FfmpegModel
         double outputDuration =
             endTime - startTime;
 
+        Console.WriteLine($"START: {startTime}");
+        Console.WriteLine($"END: {endTime}");
+        Console.WriteLine($"DURATION: {outputDuration}");
+
         if (outputDuration <= 0)
         {
             throw new Exception(
@@ -49,11 +53,15 @@ public class FfmpegModel
         // =========================
 
         string arguments =
-            $"-ss {startTime} " +
+            $"-ss {startTime.ToString(System.Globalization.CultureInfo.InvariantCulture)} " +
             $"-i \"{videoPath}\" " +
-            $"-t {outputDuration} " +
-            $"-c copy " +
-            $"\"{outputPath}\" -y";
+            $"-t {outputDuration.ToString(System.Globalization.CultureInfo.InvariantCulture)} " +
+            $"-c:v libx264 " +
+            $"-c:a aac " +
+            $"-preset veryfast " +
+            $"-movflags +faststart " +
+            $"-y " +
+            $"\"{outputPath}\"";
 
         // =========================
         // PROCESO
@@ -73,6 +81,10 @@ public class FfmpegModel
 
         process.StartInfo.UseShellExecute =
             false;
+
+        Console.WriteLine("====== FFMPEG ======");
+        Console.WriteLine(arguments);
+        Console.WriteLine("====================");
 
         process.Start();
 
