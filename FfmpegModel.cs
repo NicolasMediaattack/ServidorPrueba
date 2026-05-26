@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Globalization;
 
 public class FfmpegModel
 {
@@ -17,92 +18,45 @@ public class FfmpegModel
     }
 
     // MÉTODO PARA RECORTAR EL VIDEO
-    public async Task<string> TrimVideo()
+public async Task<string> TrimVideo()
+{
+    double totalSeconds =
+        await GetVideoDuration();
+
+    double outputDuration =
+        endTime - startTime;
+
+    if (outputDuration <= 0)
     {
-        // =========================
-        // DURACIÓN VIDEO
-        // =========================
-
-        double totalSeconds =
-            await GetVideoDuration();
-
-        double outputDuration =
-            endTime - startTime;
-
-        Console.WriteLine($"START: {startTime}");
-        Console.WriteLine($"END: {endTime}");
-        Console.WriteLine($"DURATION: {outputDuration}");
-
-        if (outputDuration <= 0)
-        {
-            throw new Exception(
-                "Duración inválida");
-        }
-
-        // =========================
-        // OUTPUT
-        // =========================
-
-        string outputPath =
-            Path.Combine(
-                "/tmp",
-                $"trimmed_{Guid.NewGuid()}.mp4");
-
-        // =========================
-        // ARGUMENTOS
-        // =========================
-
-        string arguments =
-            $"-ss {startTime.ToString(System.Globalization.CultureInfo.InvariantCulture)} " +
-            $"-i \"{videoPath}\" " +
-            $"-t {outputDuration.ToString(System.Globalization.CultureInfo.InvariantCulture)} " +
-            $"-c:v libx264 " +
-            $"-c:a aac " +
-            $"-preset veryfast " +
-            $"-movflags +faststart " +
-            $"-y " +
-            $"\"{outputPath}\"";
-
-        // =========================
-        // PROCESO
-        // =========================
-
-        Process process =
-            new Process();
-
-        process.StartInfo.FileName =
-            "ffmpeg";
-
-        process.StartInfo.Arguments =
-            arguments;
-
-        process.StartInfo.RedirectStandardError =
-            true;
-
-        process.StartInfo.UseShellExecute =
-            false;
-
-        Console.WriteLine("====== FFMPEG ======");
-        Console.WriteLine(arguments);
-        Console.WriteLine("====================");
-
-        process.Start();
-
-        string output =
-            await process.StandardError
-                .ReadToEndAsync();
-
-        await process.WaitForExitAsync();
-
-        Console.WriteLine(output);
-
-        if (process.ExitCode != 0)
-        {
-            throw new Exception(output);
-        }
-
-        return outputPath;
+        throw new Exception("Duración inválida");
     }
+
+    string outputPath =
+        Path.Combine(
+            "/tmp",
+            $"trimmed_{Guid.NewGuid()}.mp4");
+
+    string arguments =
+        $"-ss {startTime.ToString(CultureInfo.InvariantCulture)} " +
+        $"-i \"{videoPath}\" " +
+        $"-t {outputDuration.ToString(CultureInfo.InvariantCulture)} " +
+        $"-vf scale=1280:-2 " +
+        $"-r 30 " +
+        $"-c:v libx264 " +
+        $"-preset ultrafast " +
+        $"-crf 28 " +
+        $"-c:a aac " +
+        $"-b:a 128k " +
+        $"-movflags +faststart " +
+        $"-y " +
+        $"\"{outputPath}\"";
+
+    Console.WriteLine(arguments);
+
+    await RunFfmpeg(arguments);
+
+    return outputPath;
+}
 
     // MÉTODO PARA OBTENER LA DURACIÓN DEL VIDEO
 
