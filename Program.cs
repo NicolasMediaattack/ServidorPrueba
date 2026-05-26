@@ -160,12 +160,12 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         // NORMALIZE
         // =========================
 
-        /*string normalizedPath =
+        string normalizedPath =
             await ffmpeg.NormalizeVideo(
                 trimmedPath);
 
         Console.WriteLine(
-            $"📏 Normalized: {normalizedPath}");*/
+            $"📏 Normalized: {normalizedPath}");
 
         // =========================
         // VIDEO FINAL PUBLICO
@@ -183,7 +183,7 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         // PRIMER VIDEO
         // =========================
 
-        /*if (!File.Exists(finalVideoPath))
+        if (!File.Exists(finalVideoPath))
         {
             File.Copy(
                 normalizedPath,
@@ -192,7 +192,7 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         }
 
         Console.WriteLine(
-            "✅ Video generado");*/
+            "✅ Video generado");
 
         // =========================
         // URL PUBLICA
