@@ -67,6 +67,14 @@ string publicVideosPath =
 Directory.CreateDirectory(
     publicVideosPath);
 
+string trimsPath =
+    Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "trims");
+
+Directory.CreateDirectory(
+    trimsPath);
+
 var provider =
     new FileExtensionContentTypeProvider();
 
@@ -131,6 +139,7 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         FfmpegModel ffmpeg =
             new FfmpegModel(
                 inputPath,
+                trimsPath,
                 startTime,
                 endTime);
 
@@ -140,12 +149,8 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         Console.WriteLine(
             $"✂️ Trimmed: {trimmedPath}");
 
-        string normalizedPath =
-            await ffmpeg.NormalizeVideo(
-                trimmedPath);
-
-        Console.WriteLine(
-            $"📏 Normalized: {normalizedPath}");
+        FfmpegModel.ShowTrimVideos(
+            trimsPath);
 
         string finalVideoName =
             $"final_{Guid.NewGuid()}.mp4";
@@ -158,7 +163,7 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         if (!File.Exists(finalVideoPath))
         {
             File.Copy(
-                normalizedPath,
+                trimmedPath,
                 finalVideoPath,
                 true);
         }

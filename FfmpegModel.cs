@@ -4,15 +4,18 @@ using System.Globalization;
 public class FfmpegModel
 {
     private readonly string videoPath;
+    private readonly string trimsPath;
     private readonly float startTime;
     private readonly float endTime;
 
     public FfmpegModel(
         string videoPath,
+        string trimsPath,
         float minDuration,
         float maxDuration)
     {
         this.videoPath = videoPath;
+        this.trimsPath = trimsPath; 
         this.startTime = minDuration;
         this.endTime = maxDuration;
     }
@@ -37,10 +40,16 @@ public async Task<string> TrimVideo()
             "Duración inválida");
     }
 
+    int trimCount =
+        Directory.GetFiles(
+            trimsPath,
+            "trim_*.mp4")
+        .Length + 1;
+
     string outputPath =
         Path.Combine(
-            "/tmp",
-            $"trimmed_{Guid.NewGuid()}.mp4");
+            trimsPath,
+            $"trim_{trimCount}.mp4");
 
     string arguments =
         $"-ss {startTime.ToString(CultureInfo.InvariantCulture)} " +
@@ -97,7 +106,8 @@ public async Task<string> TrimVideo()
             System.Globalization.CultureInfo.InvariantCulture);
     }
 
-    public static void ShowTemporaryVideos()
+    public static void ShowTrimVideos(
+        string trimsPath)
     {
         Console.ForegroundColor =
             ConsoleColor.Cyan;
@@ -106,7 +116,7 @@ public async Task<string> TrimVideo()
             "\n==============================");
 
         Console.WriteLine(
-            "📂 VIDEOS TEMPORALES EN /tmp");
+            "🎬 TRIMS GUARDADOS");
 
         Console.WriteLine(
             "==============================");
@@ -115,16 +125,18 @@ public async Task<string> TrimVideo()
 
         string[] files =
             Directory.GetFiles(
-                "/tmp",
+                trimsPath,
                 "*.mp4");
 
         if (files.Length == 0)
         {
             Console.WriteLine(
-                "No hay videos temporales");
+                "No hay trims");
 
             return;
         }
+
+        Array.Sort(files);
 
         foreach (string file in files)
         {
@@ -132,16 +144,13 @@ public async Task<string> TrimVideo()
                 new FileInfo(file);
 
             Console.WriteLine(
-                $"🎬 {info.Name}");
+                $"🎞️ {info.Name}");
 
             Console.WriteLine(
                 $"   📦 {(info.Length / 1024f / 1024f):F2} MB");
 
             Console.WriteLine(
                 $"   🕒 {info.CreationTime}");
-
-            Console.WriteLine(
-                $"   📍 {info.FullName}");
 
             Console.WriteLine();
         }
