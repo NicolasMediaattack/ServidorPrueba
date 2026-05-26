@@ -36,6 +36,11 @@ public async Task<string> TrimVideo()
         startTime -
         endTime;
 
+    Console.WriteLine($"TOTAL: {totalSeconds}");
+    Console.WriteLine($"START CUT: {startTime}");
+    Console.WriteLine($"END CUT: {endTime}");
+    Console.WriteLine($"FINAL DURATION: {outputDuration}");
+
     if (outputDuration <= 0)
     {
         throw new Exception(
