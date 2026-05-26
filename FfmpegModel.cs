@@ -17,83 +17,55 @@ public class FfmpegModel
         this.endTime = maxDuration;
     }
 
-    // MÉTODO PARA RECORTAR EL VIDEO
-public async Task<string> TrimVideo()
-{
-    // =========================
-    // DURACIÓN TOTAL
-    // =========================
-
-    double totalSeconds =
-        await GetVideoDuration();
-
-    // =========================
-    // RECORTAR INICIO Y FINAL
-    // =========================
-
-    double outputDuration =
-        totalSeconds -
-        startTime -
-        endTime;
-
-    Console.WriteLine($"TOTAL: {totalSeconds}");
-    Console.WriteLine($"START CUT: {startTime}");
-    Console.WriteLine($"END CUT: {endTime}");
-    Console.WriteLine($"FINAL DURATION: {outputDuration}");
-
-    if (outputDuration <= 0)
+    public async Task<string> TrimVideo()
     {
-        throw new Exception(
-            "Duración inválida");
+
+        double totalSeconds =
+            await GetVideoDuration();
+
+        double outputDuration =
+            totalSeconds -
+            startTime -
+            endTime;
+
+        Console.WriteLine($"TOTAL: {totalSeconds}");
+        Console.WriteLine($"START CUT: {startTime}");
+        Console.WriteLine($"END CUT: {endTime}");
+        Console.WriteLine($"FINAL DURATION: {outputDuration}");
+
+        if (outputDuration <= 0)
+        {
+            throw new Exception(
+                "Duración inválida");
+        }
+
+        string outputPath =
+            Path.Combine(
+                "/tmp",
+                $"trimmed_{Guid.NewGuid()}.mp4");
+
+        string arguments =
+            $"-ss {startTime.ToString(CultureInfo.InvariantCulture)} " +
+            $"-i \"{videoPath}\" " +
+            $"-t {outputDuration.ToString(CultureInfo.InvariantCulture)} " +
+            $"-vf scale=1280:-2 " +
+            $"-r 30 " +
+            $"-c:v libx264 " +
+            $"-preset ultrafast " +
+            $"-crf 28 " +
+            $"-c:a aac " +
+            $"-b:a 128k " +
+            $"-movflags +faststart " +
+            $"-y " +
+
+            $"\"{outputPath}\"";
+
+        Console.WriteLine(arguments);
+
+        await RunFfmpeg(arguments);
+
+        return outputPath;
     }
-
-    // =========================
-    // OUTPUT
-    // =========================
-
-    string outputPath =
-        Path.Combine(
-            "/tmp",
-            $"trimmed_{Guid.NewGuid()}.mp4");
-
-    // =========================
-    // FFMPEG
-    // =========================
-
-    string arguments =
-        $"-ss {startTime.ToString(CultureInfo.InvariantCulture)} " +
-        $"-i \"{videoPath}\" " +
-        $"-t {outputDuration.ToString(CultureInfo.InvariantCulture)} " +
-
-        // OPTIMIZACIONES
-        $"-vf scale=1280:-2 " +
-        $"-r 30 " +
-
-        // VIDEO
-        $"-c:v libx264 " +
-        $"-preset ultrafast " +
-        $"-crf 28 " +
-
-        // AUDIO
-        $"-c:a aac " +
-        $"-b:a 128k " +
-
-        // FASTSTART
-        $"-movflags +faststart " +
-
-        // OVERWRITE
-        $"-y " +
-
-        $"\"{outputPath}\"";
-
-    Console.WriteLine(arguments);
-
-    await RunFfmpeg(arguments);
-
-    return outputPath;
-}
-
-    // MÉTODO PARA OBTENER LA DURACIÓN DEL VIDEO
 
     private async Task<double> GetVideoDuration()
     {
@@ -127,9 +99,7 @@ public async Task<string> TrimVideo()
             System.Globalization.CultureInfo.InvariantCulture);
     }
 
-    // MÉTODO PARA MOSTRAR LOS VIDEOS TEMPORALES EN /tmp
-
-    public static void ShowTemporaryVideos()
+    /*public static void ShowTemporaryVideos()
     {
         Console.ForegroundColor =
             ConsoleColor.Cyan;
@@ -231,7 +201,7 @@ public async Task<string> TrimVideo()
         //File.Delete(listPath);
 
         return (outputPath, listPath);
-    }
+    }*/
 
     private async Task RunFfmpeg(string arguments)
     {
