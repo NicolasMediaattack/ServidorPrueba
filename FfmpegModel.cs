@@ -97,7 +97,7 @@ public async Task<string> TrimVideo()
             System.Globalization.CultureInfo.InvariantCulture);
     }
 
-    /*public static void ShowTemporaryVideos()
+    public static void ShowTemporaryVideos()
     {
         Console.ForegroundColor =
             ConsoleColor.Cyan;
@@ -169,7 +169,7 @@ public async Task<string> TrimVideo()
         return outputPath;
     }
 
-    public async Task<(string concatPath, string listPath)> ConcatVideos(string firstVideo, string secondVideo)
+    /*public async Task<(string concatPath, string listPath)> ConcatVideos(string firstVideo, string secondVideo)
     {
         string listPath =
             Path.Combine(
