@@ -147,7 +147,7 @@ public async Task<string> TrimVideo()
         }
     }
 
-    public async Task<string> NormalizeVideo(string inputVideo)
+    /*public async Task<string> NormalizeVideo(string inputVideo)
     {
         string outputPath =
             Path.Combine(
@@ -167,7 +167,7 @@ public async Task<string> TrimVideo()
         await RunFfmpeg(arguments);
 
         return outputPath;
-    }
+    }*/
 
     /*public async Task<(string concatPath, string listPath)> ConcatVideos(string firstVideo, string secondVideo)
     {
