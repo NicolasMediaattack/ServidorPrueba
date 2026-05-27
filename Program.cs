@@ -143,8 +143,14 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
                 startTime,
                 endTime);
 
-        string trimmedPath =
+        var result =
             await ffmpeg.TrimVideo();
+
+            string trimmedPath =
+                result.videoPath;
+
+            string thumbnailPath =
+                result.thumbnailPath;
 
         Console.WriteLine(
             $"✂️ Trimmed: {trimmedPath}");
@@ -160,11 +166,24 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
                 publicVideosPath,
                 finalVideoName);
 
+        string finalThumbnailName =
+            $"thumb_{Guid.NewGuid()}.jpg";
+
+        string finalThumbnailPath =
+            Path.Combine(
+                publicVideosPath,
+                finalThumbnailName);
+
         if (!File.Exists(finalVideoPath))
         {
             File.Copy(
                 trimmedPath,
                 finalVideoPath,
+                true);
+
+            File.Copy(
+                thumbnailPath,
+                finalThumbnailPath,
                 true);
         }
 
@@ -174,10 +193,17 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         string videoUrl =
             $"https://{request.Host}/videos/{finalVideoName}";
 
+        string thumbnailUrl =
+            $"https://{request.Host}/videos/{finalThumbnailName}";
+
         Console.WriteLine(
             $"🌍 URL: {videoUrl}");
 
-        return Results.Ok(videoUrl);
+        return Results.Ok(new
+            {
+                video = videoUrl,
+                thumbnail = thumbnailUrl
+            });
     }
     finally
     {
