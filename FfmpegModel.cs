@@ -20,79 +20,59 @@ public class FfmpegModel
         this.endTime = maxDuration;
     }
 
-    public async Task<(string videoPath, string thumbnailPath)> TrimVideo()
+public async Task<string> TrimVideo()
+{
+
+    double totalSeconds =
+        await GetVideoDuration();
+
+    double outputDuration =
+    endTime - startTime;
+
+    Console.WriteLine($"TOTAL: {totalSeconds}");
+    Console.WriteLine($"START CUT: {startTime}");
+    Console.WriteLine($"END CUT: {endTime}");
+    Console.WriteLine($"FINAL DURATION: {outputDuration}");
+
+    if (outputDuration <= 0)
     {
-        double totalSeconds =
-            await GetVideoDuration();
-
-        double outputDuration =
-            endTime - startTime;
-
-        Console.WriteLine($"TOTAL: {totalSeconds}");
-        Console.WriteLine($"START CUT: {startTime}");
-        Console.WriteLine($"END CUT: {endTime}");
-        Console.WriteLine($"FINAL DURATION: {outputDuration}");
-
-        if (outputDuration <= 0)
-        {
-            throw new Exception(
-                "Duración inválida");
-        }
-
-        int trimCount =
-            Directory.GetFiles(
-                trimsPath,
-                "trim_*.mp4")
-            .Length + 1;
-
-        string outputPath =
-            Path.Combine(
-                trimsPath,
-                $"trim_{trimCount}.mp4");
-
-        string thumbnailPath =
-            Path.Combine(
-                trimsPath,
-                $"trim_{trimCount}.jpg");
-
-        string arguments =
-            $"-ss {startTime.ToString(CultureInfo.InvariantCulture)} " +
-            $"-i \"{videoPath}\" " +
-            $"-t {outputDuration.ToString(CultureInfo.InvariantCulture)} " +
-            $"-vf scale=1280:-2 " +
-            $"-r 30 " +
-            $"-c:v libx264 " +
-            $"-preset ultrafast " +
-            $"-crf 28 " +
-            $"-c:a aac " +
-            $"-b:a 128k " +
-            $"-movflags +faststart " +
-            $"-y " +
-            $"\"{outputPath}\"";
-
-        await RunFfmpeg(arguments);
-
-        await GenerateThumbnail(
-            outputPath,
-            thumbnailPath);
-
-        return (outputPath, thumbnailPath);
+        throw new Exception(
+            "Duración inválida");
     }
 
-    private async Task GenerateThumbnail(
-        string inputVideo,
-        string outputImage)
-    {
-        string arguments =
-            $"-i \"{inputVideo}\" " +
-            $"-vf \"select=eq(n\\,0)\" " +
-            $"-vframes 1 " +
-            $"-q:v 2 " +
-            $"-y " +
-            $"\"{outputImage}\"";
+    int trimCount =
+        Directory.GetFiles(
+            trimsPath,
+            "trim_*.mp4")
+        .Length + 1;
 
-        await RunFfmpeg(arguments);
-    }
+    string outputPath =
+        Path.Combine(
+            trimsPath,
+            $"trim_{trimCount}.mp4");
+
+    string arguments =
+        $"-ss {startTime.ToString(CultureInfo.InvariantCulture)} " +
+        $"-i \"{videoPath}\" " +
+        $"-t {outputDuration.ToString(CultureInfo.InvariantCulture)} " +
+        $"-vf scale=1280:-2 " +
+        $"-r 30 " +
+        $"-c:v libx264 " +
+        $"-preset ultrafast " +
+        $"-crf 28 " +
+        $"-c:a aac " +
+        $"-b:a 128k " +
+        $"-movflags +faststart " +
+        $"-y " +
+
+        $"\"{outputPath}\"";
+
+    Console.WriteLine(arguments);
+
+    await RunFfmpeg(arguments);
+
+    return outputPath;
+}
 
     private async Task<double> GetVideoDuration()
     {
