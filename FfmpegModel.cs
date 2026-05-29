@@ -20,59 +20,86 @@ public class FfmpegModel
         this.endTime = maxDuration;
     }
 
-public async Task<string> TrimVideo()
-{
-
-    double totalSeconds =
-        await GetVideoDuration();
-
-    double outputDuration =
-    endTime - startTime;
-
-    Console.WriteLine($"TOTAL: {totalSeconds}");
-    Console.WriteLine($"START CUT: {startTime}");
-    Console.WriteLine($"END CUT: {endTime}");
-    Console.WriteLine($"FINAL DURATION: {outputDuration}");
-
-    if (outputDuration <= 0)
+    public async Task<string> TrimVideo()
     {
-        throw new Exception(
-            "Duración inválida");
+
+        double totalSeconds =
+            await GetVideoDuration();
+
+        double outputDuration =
+        endTime - startTime;
+
+        Console.WriteLine($"TOTAL: {totalSeconds}");
+        Console.WriteLine($"START CUT: {startTime}");
+        Console.WriteLine($"END CUT: {endTime}");
+        Console.WriteLine($"FINAL DURATION: {outputDuration}");
+
+        if (outputDuration <= 0)
+        {
+            throw new Exception(
+                "Duración inválida");
+        }
+
+        int trimCount =
+            Directory.GetFiles(
+                trimsPath,
+                "trim_*.mp4")
+            .Length + 1;
+
+        string outputPath =
+            Path.Combine(
+                trimsPath,
+                $"trim_{trimCount}.mp4");
+
+        string arguments =
+            $"-ss {startTime.ToString(CultureInfo.InvariantCulture)} " +
+            $"-i \"{videoPath}\" " +
+            $"-t {outputDuration.ToString(CultureInfo.InvariantCulture)} " +
+            $"-vf scale=1280:-2 " +
+            $"-r 30 " +
+            $"-c:v libx264 " +
+            $"-preset ultrafast " +
+            $"-crf 28 " +
+            $"-c:a aac " +
+            $"-b:a 128k " +
+            $"-movflags +faststart " +
+            $"-y " +
+
+            $"\"{outputPath}\"";
+
+        Console.WriteLine(arguments);
+
+        await RunFfmpeg(arguments);
+
+        string thumbnailPath = await GenerateThumbnail(outputPath, trimsPath);
+
+        return outputPath;
     }
 
-    int trimCount =
-        Directory.GetFiles(
-            trimsPath,
-            "trim_*.mp4")
-        .Length + 1;
+    public async Task<string> GenerateThumbnail(string videoPath, string trimsPath)
+    {
+        string thumbnailPath = Path.ChangeExtension(videoPath, ".jpg");
 
-    string outputPath =
-        Path.Combine(
-            trimsPath,
-            $"trim_{trimCount}.mp4");
+        string arguments =
+            $"-ss 00:00:01 " +          // Frame en el segundo 1
+            $"-i \"{videoPath}\" " +
+            $"-frames:v 1 " +
+            $"-vf scale=640:-2 " +
+            $"-q:v 2 " +
+            $"-y " +
+            $"\"{thumbnailPath}\"";
 
-    string arguments =
-        $"-ss {startTime.ToString(CultureInfo.InvariantCulture)} " +
-        $"-i \"{videoPath}\" " +
-        $"-t {outputDuration.ToString(CultureInfo.InvariantCulture)} " +
-        $"-vf scale=1280:-2 " +
-        $"-r 30 " +
-        $"-c:v libx264 " +
-        $"-preset ultrafast " +
-        $"-crf 28 " +
-        $"-c:a aac " +
-        $"-b:a 128k " +
-        $"-movflags +faststart " +
-        $"-y " +
+        await RunFfmpeg(arguments);
 
-        $"\"{outputPath}\"";
+        // Mostrar por consola
+        Console.ForegroundColor = ConsoleColor.Yellow;
+        Console.WriteLine("\n📸 THUMBNAIL GENERADO");
+        Console.WriteLine($"   🖼️  {Path.GetFileName(thumbnailPath)}");
+        Console.WriteLine($"   📦 {(new FileInfo(thumbnailPath).Length / 1024f):F2} KB");
+        Console.ResetColor();
 
-    Console.WriteLine(arguments);
-
-    await RunFfmpeg(arguments);
-
-    return outputPath;
-}
+        return thumbnailPath;
+    }
 
     private async Task<double> GetVideoDuration()
     {
@@ -155,28 +182,6 @@ public async Task<string> TrimVideo()
             Console.WriteLine();
         }
     }
-
-    /*public async Task<string> NormalizeVideo(string inputVideo)
-    {
-        string outputPath =
-            Path.Combine(
-                "/tmp",
-                $"normalized_{Guid.NewGuid()}.mp4");
-
-        string arguments =
-            $"-loglevel error " +
-            $"-i \"{inputVideo}\" " +
-            $"-vf scale=1280:720,fps=30,format=yuv420p " +
-            $"-c:v libx264 " +
-            $"-preset veryfast " +
-            $"-c:a aac " +
-            $"-y " +
-            $"\"{outputPath}\"";
-
-        await RunFfmpeg(arguments);
-
-        return outputPath;
-    }*/
 
     private async Task RunFfmpeg(string arguments)
     {
