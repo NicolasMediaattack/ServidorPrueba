@@ -100,84 +100,50 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
 
     try
     {
-        var form =
-            await request.ReadFormAsync();
+        var form = await request.ReadFormAsync();
 
-        float startTime =
-            float.Parse(
-                form["startTime"],
-                CultureInfo.InvariantCulture);
+        float startTime = float.Parse(form["startTime"], CultureInfo.InvariantCulture);
+        float endTime = float.Parse(form["endTime"], CultureInfo.InvariantCulture);
 
-        float endTime =
-            float.Parse(
-                form["endTime"],
-                CultureInfo.InvariantCulture);
-
-        IFormFile? video =
-            form.Files["video"];
+        IFormFile? video = form.Files["video"];
 
         if (video == null)
-        {
-            return Results.BadRequest(
-                "No video");
-        }
+            return Results.BadRequest("No video");
 
-        string inputPath =
-            Path.Combine(
-                "/tmp",
-                $"{Guid.NewGuid()}_{video.FileName}");
+        string inputPath = Path.Combine("/tmp", $"{Guid.NewGuid()}_{video.FileName}");
 
-        using (var stream =
-            File.Create(inputPath))
+        using (var stream = File.Create(inputPath))
         {
             await video.CopyToAsync(stream);
         }
 
-        Console.WriteLine(
-            $"🎬 Input: {inputPath}");
+        FfmpegModel ffmpeg = new FfmpegModel(inputPath, trimsPath, startTime, endTime);
 
-        FfmpegModel ffmpeg =
-            new FfmpegModel(
-                inputPath,
-                trimsPath,
-                startTime,
-                endTime);
+        // ✅ Ahora TrimVideo devuelve tupla (video, thumbnail)
+        var (trimmedPath, thumbnailPath) = await ffmpeg.TrimVideo();
 
-        string trimmedPath =
-            await ffmpeg.TrimVideo();
+        FfmpegModel.ShowTrimVideos(trimsPath);
 
-        Console.WriteLine(
-            $"✂️ Trimmed: {trimmedPath}");
+        // Copiar video a carpeta pública
+        string finalVideoName = $"final_{Guid.NewGuid()}.mp4";
+        string finalVideoPath = Path.Combine(publicVideosPath, finalVideoName);
+        File.Copy(trimmedPath, finalVideoPath, true);
 
-        FfmpegModel.ShowTrimVideos(
-            trimsPath);
+        // Copiar thumbnail a carpeta pública
+        string finalThumbName = Path.GetFileNameWithoutExtension(finalVideoName) + ".jpg";
+        string finalThumbPath = Path.Combine(publicVideosPath, finalThumbName);
+        File.Copy(thumbnailPath, finalThumbPath, true);
 
-        string finalVideoName =
-            $"final_{Guid.NewGuid()}.mp4";
+        string videoUrl = $"https://{request.Host}/videos/{finalVideoName}";
+        string thumbUrl = $"https://{request.Host}/videos/{finalThumbName}";
 
-        string finalVideoPath =
-            Path.Combine(
-                publicVideosPath,
-                finalVideoName);
+        Console.ForegroundColor = ConsoleColor.Cyan;
+        Console.WriteLine($"🌍 Video URL:     {videoUrl}");
+        Console.WriteLine($"🖼️  Thumbnail URL: {thumbUrl}");
+        Console.ResetColor();
 
-        if (!File.Exists(finalVideoPath))
-        {
-            File.Copy(
-                trimmedPath,
-                finalVideoPath,
-                true);
-        }
-
-        Console.WriteLine(
-            "✅ Video generado");
-
-        string videoUrl =
-            $"https://{request.Host}/videos/{finalVideoName}";
-
-        Console.WriteLine(
-            $"🌍 URL: {videoUrl}");
-
-        return Results.Ok(videoUrl);
+        // ✅ Devuelve JSON con ambas URLs en lugar de solo string
+        return Results.Ok(new { videoUrl, thumbnailUrl = thumbUrl });
     }
     finally
     {

@@ -20,7 +20,7 @@ public class FfmpegModel
         this.endTime = maxDuration;
     }
 
-    public async Task<string> TrimVideo()
+    public async Task<(string videoPath, string thumbnailPath)> TrimVideo()
     {
 
         double totalSeconds =
@@ -73,7 +73,7 @@ public class FfmpegModel
 
         string thumbnailPath = await GenerateThumbnail(outputPath, trimsPath);
 
-        return outputPath;
+        return (outputPath, thumbnailPath);
     }
 
     public async Task<string> GenerateThumbnail(string videoPath, string trimsPath)
