@@ -2,6 +2,7 @@
 using System.Globalization;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.StaticFiles;
+using System.Collections.Concurrent;
 
 SemaphoreSlim semaphore =
     new SemaphoreSlim(1, 1);
@@ -94,6 +95,11 @@ app.UseStaticFiles(
             provider
     });
 
+ConcurrentDictionary<string, string> trimsDictionary =
+    new ConcurrentDictionary<string, string>();
+
+int trimCounter = 0;
+
 app.MapPost("/mensaje", async (HttpRequest request) =>
 {
     await semaphore.WaitAsync();
@@ -119,17 +125,26 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
 
         FfmpegModel ffmpeg = new FfmpegModel(inputPath, trimsPath, startTime, endTime);
 
-        // ✅ Ahora TrimVideo devuelve tupla (video, thumbnail)
         var (trimmedPath, thumbnailPath) = await ffmpeg.TrimVideo();
+
+        int currentNumber =
+            Interlocked.Increment(ref trimCounter);
+
+        string trimKey =
+            $"trim{currentNumber}";
+
+        trimsDictionary[trimKey] =
+            trimmedPath;
+
+        Console.WriteLine(
+            $"📦 Guardado: {trimKey} -> {trimmedPath}");
 
         FfmpegModel.ShowTrimVideos(trimsPath);
 
-        // Copiar video a carpeta pública
         string finalVideoName = $"final_{Guid.NewGuid()}.mp4";
         string finalVideoPath = Path.Combine(publicVideosPath, finalVideoName);
         File.Copy(trimmedPath, finalVideoPath, true);
 
-        // Copiar thumbnail a carpeta pública
         string finalThumbName = Path.GetFileNameWithoutExtension(finalVideoName) + ".jpg";
         string finalThumbPath = Path.Combine(publicVideosPath, finalThumbName);
         File.Copy(thumbnailPath, finalThumbPath, true);
@@ -142,7 +157,6 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         Console.WriteLine($"🖼️  Thumbnail URL: {thumbUrl}");
         Console.ResetColor();
 
-        // ✅ Devuelve JSON con ambas URLs en lugar de solo string
         return Results.Ok(new { videoUrl, thumbnailUrl = thumbUrl });
     }
     finally
