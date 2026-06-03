@@ -127,6 +127,22 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
 
         var (trimmedPath, thumbnailPath) = await ffmpeg.TrimVideo();
 
+        string finalThumbName =
+            $"thumb_{Guid.NewGuid()}.jpg";
+
+        string finalThumbPath =
+            Path.Combine(
+                publicVideosPath,
+                finalThumbName);
+
+        File.Copy(
+            thumbnailPath,
+            finalThumbPath,
+            true);
+
+        string thumbUrl =
+            $"https://{request.Host}/videos/{finalThumbName}";
+
         int currentNumber =
             Interlocked.Increment(ref trimCounter);
 
@@ -184,7 +200,7 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
             return Results.Ok(new
             {
                 videoUrl = mergedVideoUrl,
-                thumbnailUrl = "",
+                thumbnailUrl = thumbUrl,
                 mergedVideoUrl
             });
         }
@@ -195,12 +211,12 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         string finalVideoPath = Path.Combine(publicVideosPath, finalVideoName);
         File.Copy(trimmedPath, finalVideoPath, true);
 
-        string finalThumbName = Path.GetFileNameWithoutExtension(finalVideoName) + ".jpg";
-        string finalThumbPath = Path.Combine(publicVideosPath, finalThumbName);
-        File.Copy(thumbnailPath, finalThumbPath, true);
+        //string finalThumbName = Path.GetFileNameWithoutExtension(finalVideoName) + ".jpg";
+        //string finalThumbPath = Path.Combine(publicVideosPath, finalThumbName);
+        //File.Copy(thumbnailPath, finalThumbPath, true);
 
         string videoUrl = $"https://{request.Host}/videos/{finalVideoName}";
-        string thumbUrl = $"https://{request.Host}/videos/{finalThumbName}";
+        //string thumbUrl = $"https://{request.Host}/videos/{finalThumbName}";
 
         Console.ForegroundColor = ConsoleColor.Cyan;
         Console.WriteLine($"🌍 Video URL:     {videoUrl}");
