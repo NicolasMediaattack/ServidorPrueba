@@ -56,6 +56,15 @@ builder.WebHost.ConfigureKestrel(options =>
 {
     options.Limits.MaxRequestBodySize =
         500_000_000;
+
+    options.Limits.MinRequestBodyDataRate =
+        null;
+
+    options.Limits.KeepAliveTimeout =
+        TimeSpan.FromMinutes(10);
+
+    options.Limits.RequestHeadersTimeout =
+        TimeSpan.FromMinutes(2);
 });
 
 var app = builder.Build();
