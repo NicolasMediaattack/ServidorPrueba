@@ -139,6 +139,16 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         Console.WriteLine(
             $"📦 Guardado: {trimKey} -> {trimmedPath}");
 
+        if (trimsDictionary.Count > 1)
+        {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+
+            Console.WriteLine(
+                $"⚠️ Hay {trimsDictionary.Count} trims almacenados en el diccionario");
+
+            Console.ResetColor();
+        }
+
         FfmpegModel.ShowTrimVideos(trimsPath);
 
         string finalVideoName = $"final_{Guid.NewGuid()}.mp4";
