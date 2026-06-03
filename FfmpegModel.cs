@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.Globalization;
-using System.Collections.Concurrent;
 
 public class FfmpegModel
 {
@@ -182,57 +181,6 @@ public class FfmpegModel
 
             Console.WriteLine();
         }
-    }
-
-    public async Task<string> ConcatVideos(ConcurrentDictionary<string, string> trimsDictionary)
-    {
-        if (trimsDictionary.Count < 2)
-        {
-            throw new Exception(
-                "Se necesitan al menos 2 vídeos");
-        }
-
-        string listFile =
-            Path.Combine(
-                trimsPath,
-                "concat_list.txt");
-
-        var orderedVideos =
-            trimsDictionary
-                .OrderBy(x =>
-                    int.Parse(
-                        x.Key.Replace("trim", "")))
-                .Select(x =>
-                    $"file '{x.Value}'");
-
-        await File.WriteAllLinesAsync(
-            listFile,
-            orderedVideos);
-
-        string outputPath =
-            Path.Combine(
-                trimsPath,
-                $"merged_{DateTime.Now:yyyyMMdd_HHmmss}.mp4");
-
-        string arguments =
-            $"-f concat " +
-            $"-safe 0 " +
-            $"-i \"{listFile}\" " +
-            $"-c copy " +
-            $"-y " +
-            $"\"{outputPath}\"";
-
-        await RunFfmpeg(arguments);
-
-        Console.ForegroundColor =
-            ConsoleColor.Green;
-
-        Console.WriteLine(
-            $"✅ Vídeo concatenado: {outputPath}");
-
-        Console.ResetColor();
-
-        return outputPath;
     }
 
     private async Task RunFfmpeg(string arguments)

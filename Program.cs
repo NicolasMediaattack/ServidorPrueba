@@ -139,56 +139,6 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
         Console.WriteLine(
             $"📦 Guardado: {trimKey} -> {trimmedPath}");
 
-        if (trimsDictionary.Count > 1)
-        {
-            Console.ForegroundColor = ConsoleColor.Yellow;
-
-            Console.WriteLine(
-                $"⚠️ Hay {trimsDictionary.Count} trims almacenados");
-
-            Console.ResetColor();
-
-            string mergedVideo =
-                await ffmpeg.ConcatVideos(
-                    trimsDictionary);
-
-            Console.WriteLine(
-                $"🎬 Resultado final: {mergedVideo}");
-
-            // Copiar a carpeta pública
-
-            string mergedVideoName =
-                $"merged_{Guid.NewGuid()}.mp4";
-
-            string publicMergedVideoPath =
-                Path.Combine(
-                    publicVideosPath,
-                    mergedVideoName);
-
-            File.Copy(
-                mergedVideo,
-                publicMergedVideoPath,
-                true);
-
-            string mergedVideoUrl =
-                $"https://{request.Host}/videos/{mergedVideoName}";
-
-            Console.ForegroundColor =
-                ConsoleColor.Green;
-
-            Console.WriteLine(
-                $"🌍 MERGED VIDEO URL: {mergedVideoUrl}");
-
-            Console.ResetColor();
-
-            return Results.Ok(new
-            {
-                videoUrl = mergedVideoUrl,
-                thumbnailUrl = "",
-                mergedVideoUrl
-            });
-        }
-
         FfmpegModel.ShowTrimVideos(trimsPath);
 
         string finalVideoName = $"final_{Guid.NewGuid()}.mp4";
