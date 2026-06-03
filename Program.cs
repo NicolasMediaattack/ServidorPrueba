@@ -183,6 +183,8 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
 
             return Results.Ok(new
             {
+                videoUrl = mergedVideoUrl,
+                thumbnailUrl = "",
                 mergedVideoUrl
             });
         }
