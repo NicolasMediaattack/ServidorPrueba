@@ -177,7 +177,7 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
                 ConsoleColor.Green;
 
             Console.WriteLine(
-                $"🌍 MERGED VIDEO URL: {mergedVideoUrl}");
+                $"🌍 MERGED VIDEO url: {mergedVideoUrl}");
 
             Console.ResetColor();
 
