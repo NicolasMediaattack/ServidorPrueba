@@ -147,6 +147,9 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
                 $"⚠️ Hay {trimsDictionary.Count} trims almacenados en el diccionario");
 
             Console.ResetColor();
+
+            return Results.BadRequest(
+            "Ya existe más de un trim en el diccionario");
         }
 
         FfmpegModel.ShowTrimVideos(trimsPath);
