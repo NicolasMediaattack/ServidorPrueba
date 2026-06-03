@@ -144,12 +144,16 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
             Console.ForegroundColor = ConsoleColor.Yellow;
 
             Console.WriteLine(
-                $"⚠️ Hay {trimsDictionary.Count} trims almacenados en el diccionario");
+                $"⚠️ Hay {trimsDictionary.Count} trims almacenados");
 
             Console.ResetColor();
 
-            return Results.BadRequest(
-            "Ya existe más de un trim en el diccionario");
+            string mergedVideo =
+                await ffmpeg.ConcatVideos(
+                    trimsDictionary);
+
+            Console.WriteLine(
+                $"🎬 Resultado final: {mergedVideo}");
         }
 
         FfmpegModel.ShowTrimVideos(trimsPath);
