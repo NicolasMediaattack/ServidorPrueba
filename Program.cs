@@ -240,6 +240,34 @@ app.MapPost("/mensaje", async (HttpRequest request) =>
     }
 });
 
+app.MapGet("/clean", () =>
+{
+    trimsDictionary.Clear();
+
+    trimCounter = 0;
+
+    foreach (string file in Directory.GetFiles(trimsPath))
+    {
+        File.Delete(file);
+    }
+
+    foreach (string file in Directory.GetFiles(publicVideosPath))
+    {
+        File.Delete(file);
+    }
+
+    Console.ForegroundColor =
+        ConsoleColor.Red;
+
+    Console.WriteLine(
+        "🗑️ Memoria limpiada");
+
+    Console.ResetColor();
+
+    return Results.Ok(
+        "Memoria limpiada");
+});
+
 Console.ForegroundColor =
     ConsoleColor.Cyan;
 
